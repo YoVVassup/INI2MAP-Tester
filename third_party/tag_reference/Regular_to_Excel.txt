@@ -1,0 +1,10 @@
+^ParaDrop\.([A-Za-z0-9]+)\.Plane([2-9][0-9]*)\.(Aircraft|Types|Num)$
+^Prerequisite\.List([1-9][0-9]*)$
+^Versus\.([A-Za-z0-9_-]+)(?:\.(ForceFire|Retaliate|PassiveAcquire))?$
+^Convert[0-9]+\.(From|To|AffectedHouses)$
+^LimboDelivery\.RandomWeights[0-9]*$
+^SW\.Next\.RandomWeights[0-9]*$
+^SpawnsCrate[0-9]+\.(Type|Weight)$
+^InsigniaFrame\.Weapon[0-9]+(\.(Rookie|Veteran|Elite))?$
+^InsigniaFrames\.Weapon[0-9]+$
+^Insignia\.Weapon[0-9]+(\.(Rookie|Veteran|Elite))?$

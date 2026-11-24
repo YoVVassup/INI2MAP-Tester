@@ -1,0 +1,123 @@
+THIRD-PARTY NOTICES
+===================
+
+This file lists the third-party components used by INI2MAP Tester, either
+bundled in this repository, embedded into the built executables, or used as
+reference material. The project itself is licensed under CC BY-NC-SA 4.0
+(see LICENSE); the licenses below apply to the respective components.
+
+1. Tcl 8.6 runtime (tclkit)
+---------------------------
+Where:     embedded into every built executable (RA2MT.exe, RA2YRMT.exe,
+           MOMT.exe) as the starpack runtime, built from
+           base-tcl8.6-thread-win32-ix86.exe via "sdx wrap".
+License:   TCL license (SPDX: TCL), the standard Tcl/Tk license terms.
+Copyright: Regents of the University of California, Sun Microsystems, Inc.,
+           Scriptics Corporation, ActiveState Corporation and other parties.
+Terms:     use, copy, modify, distribute and license is granted provided that
+           existing copyright notices are retained in all copies and the
+           license notice is included verbatim in any distributions.
+Info:      https://www.tcl.tk/software/tcltk/license.html
+
+2. sdx (Starkit Developer eXtension)
+------------------------------------
+Where:     tools/sdx.kit - build-time only, wraps MOMT.vfs into a starpack;
+           not embedded into the built executables.
+License:   MIT (as recorded for the sdx distribution, e.g. the AUR "sdx"
+           package metadata for sdx-20110317).
+Upstream:  https://equi4.com/starkit/sdx.html
+           https://chiselapp.com/user/aspect/repository/sdx/
+
+3. Ffidl 0.9
+------------
+Where:     others/ffidl/ffidl_xp.dll, copied next to every built executable
+           and loaded through the generated pkgIndex.tcl.
+License:   BSD.
+Copyright: Copyright (c) 1999 Roger E Critchlow Jr, Santa Fe, NM, USA;
+           Copyright (c) 2005 Daniel A. Steffen;
+           Copyright (c) 2015-2021 Patzschke + Rasp Software GmbH, Wiesbaden.
+Notes:     the DLL embeds libffi (permissive MIT/BSD-style license), which is
+           required by Ffidl's default (libffi) build configuration.
+Info:      https://prs-de.github.io/ffidl/
+           https://core.tcl-lang.org/jenglish/gutter/packages/ffidl.html
+
+4. sha256.tcl
+-------------
+Where:     others/sha256/sha256.tcl, copied next to every built executable.
+License:   Tcl license (the upstream distribution refers to "license.terms",
+           which was not redistributable in this repository; the upstream
+           Tcl-license terms apply).
+Copyright: Copyright (C) 2005 Pat Thoyts <patthoyts@users.sourceforge.net>
+Info:      https://sourceforge.net/projects/tclutils/
+
+5. libsodium
+------------
+Where:     statically linked into CryptoVisionLib_xp.dll (the native crypto
+           library looked up next to the executable).
+License:   ISC.
+Copyright: Copyright (c) 2013-2025 Frank Denis <j@pureftpd.net>
+Notes:     CryptoVisionLib_xp.dll is a build of this project's own wrapper
+           (third_party/CryptoVisionLib, excluded from the repository) around
+           libsodium; binary strings such as "sodium_init failed" confirm the
+           embedded libsodium. ISC text: https://github.com/jedisct1/libsodium
+          /blob/master/LICENSE
+
+6. World Altering Editor (WAE)
+------------------------------
+Where:     NOT included in this repository.
+Role:      used as a reference implementation only: the 26 map-integrity
+           checks and their report wording were re-implemented in this
+           project's own Tcl code from observing WAE behavior. No WAE source
+           code is redistributed here.
+License:   GNU General Public License v3.0 (applies to WAE itself, not to
+           this project).
+Info:      https://github.com/CnCNet/WorldAlteringEditor
+
+7. ResourceHacker
+-----------------
+Where:     tools/ResourceHacker.exe - downloaded at build time from the
+           author's site when missing; excluded from this repository via
+           .gitignore and therefore not redistributed here.
+License:   freeware by Angus Johnson.
+Info:      https://www.angusj.com/resourcehacker/
+
+8. Tag reference data (ModEnc / ModEnc2, Ares and Phobos documentation)
+-----------------------------------------------------------------------
+Where:     third_party/tag_reference (tag_reference.xlsx, tags-*.cfg
+           whitelists, provenance notes in modenc_lost.txt).
+Role:      factual game data only - tag names, sections and engine behavior.
+           No verbatim documentation text is redistributed.
+Licenses:  Ares documentation: BSD 4-Clause (Ares-Developers) -
+               https://github.com/Ares-Developers/Ares
+           Phobos documentation: GPL v3 (Phobos-developers) -
+               https://github.com/Phobos-developers/Phobos
+           ModEnc / ModEnc2 wiki content: attribution only, source URLs are
+               recorded in third_party/tag_reference/modenc_lost.txt -
+               https://modenc.renegadeprojects.com/ and
+               https://www.modenc2.markjfox.net/
+
+9. G-E forum scripts (AICheck, SoundCheck, MisTest, TagList)
+------------------------------------------------------------
+Where:     NOT included in this repository. The related checks were
+           re-expressed in this project's own code; attribution is in the
+           Credits section of README.md.
+License:   no explicit license stated by the author; the scripts are
+           distributed on the PPM forums. Attribution:
+             AICHECK   v8.4 - https://ppmforums.com/topic-68095/
+             SOUNDCHECK v3.2c - https://ppmforums.com/topic-68094/
+             MISTEST   v5.3 - https://ppmforums.com/topic-68090/
+             TAGLIST   v1.3c - https://ppmforums.com/topic-68088/
+
+10. json_report
+---------------
+Where:     third_party/json_report (json_report.c -> json_report.exe), copied
+           next to every built executable and into the project root.
+Role:     part of this project (own source code), listed for completeness;
+           covered by the project license CC BY-NC-SA 4.0 (see LICENSE).
+
+Note on game data
+-----------------
+Encrypted game files (*.enc) produced by this tool are not part of this
+repository: original_files/, *.enc and related artifacts are excluded via
+.gitignore. Red Alert 2 and Yuri's Revenge are trademarks of Electronic Arts
+Inc.; this project is not affiliated with or endorsed by Electronic Arts.

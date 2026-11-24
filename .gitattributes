@@ -1,0 +1,41 @@
+# Line-ending and binary rules for INI2MAP Tester.
+# Checkout EOLs are pinned per file so a fresh clone passes
+# `python tools/check_boxes.py` on any OS, regardless of core.autocrlf.
+
+# Default: detect text, store LF in the repo, keep binary files untouched.
+* text=auto
+
+# --- EOL contract from tools/check_boxes.py:100-108 ---
+# README.md / README.zh.md / BUILD*.md : UTF-8 no BOM, LF
+# README.ru.md                        : UTF-8 no BOM, CRLF
+# (later lines win: README.ru.md overrides *.md below)
+*.md text eol=lf
+README.ru.md text eol=crlf
+
+# Scripts and configs: deterministic LF checkout (Tcl, PowerShell, Python,
+# settings/tags cfg). *.ps1 / *.bat / settings*.cfg must stay ASCII-only.
+*.tcl text eol=lf
+*.py text eol=lf
+*.ps1 text eol=lf
+*.cfg text eol=lf
+
+# *.map files are FinalAlert 2 INI text ([Section] key=value), not binaries.
+# Baseline maps (sov01/TEST/all01) are LF; the parser also accepts CRLF.
+*.map text eol=lf
+
+# Windows command scripts: CRLF for cmd.exe label/goto compatibility.
+*.bat text eol=crlf
+
+# Binaries: never normalize line endings, never diff.
+*.dll binary
+*.exe binary
+*.o binary
+*.res binary
+*.kit binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.xlsx binary
+*.enc binary

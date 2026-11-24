@@ -1,0 +1,170 @@
+# modenc_lost.txt - теги, отсутствующие в tag_reference.xlsx
+# Источники проверки (2026-10-12):
+#   ModEnc2  https://www.modenc2.markjfox.net/<Section> (wikitext, action=raw)
+#   ModEnc   https://modenc.renegadeprojects.com/ и https://modenc.renegadeprojects.com/<Tag> (ручная проверка каждой страницы)
+#   Ares     https://ares-developers.github.io/Ares-docs/ (source: github.com/Ares-Developers/Ares-docs)
+#   Phobos   https://phobos.readthedocs.io/en/stable/ (тег v0.4.0.2, 2026-01-28; develop docs также сверялись раньше)
+#   NonExistent https://modenc.renegadeprojects.com/Non-Existent_Flags (флаги, которых в игре НЕТ)
+# Колонки: Section | Tag | Ini-файл | Карта | Источник
+#   Ini-файл: Rules = rules(md).ini; Art = art(md).ini - НЕ берём (решение 2026-10-12)
+#   Карта:    Y = использован картой (прогон main.tcl --mode ares, all01.map)
+# Проверка: книга 4800 строк (2026-10-12), прогон ares: 81 неизвестных тегов
+# Статус: НЕ добавлено в книгу по решению пользователя; генерация - generate_tags.ps1
+
+# ОСНОВНОЙ СПИСОК: Rules-теги, описанные в ModEnc2 и отсутствующие в книге
+[Weapons]
+Weapons | DrawBoltAsLaser | Есть | - | ModEnc2
+Weapons | IonSensitive | Rules | - | ModEnc2
+
+# ОБЩИЙ ИТОГ ModEnc2-Rules: 2 (карта задействует 0)
+
+# ПРИЛОЖЕНИЕ A - теги карты (прогон ares), которых нет в книге в указанной секции
+# A1: тег есть в книге, но в других TechnoType-секциях (проверка per-section его не видит)
+[Карта-A1-кросс-секция]
+AircraftTypes | BurstDelay0 | -> BuildingTypes, VehicleTypes | ModEnc
+AircraftTypes | BurstDelay1 | -> BuildingTypes, VehicleTypes | ModEnc
+AircraftTypes | BurstDelay2 | -> BuildingTypes, VehicleTypes | ModEnc
+AircraftTypes | BurstDelay3 | -> BuildingTypes, VehicleTypes | ModEnc
+AircraftTypes | FireAngle | -> BuildingTypes, VehicleTypes | ModEnc
+BuildingTypes | CanBeReversed | -> AircraftTypes, InfantryTypes, VehicleTypes | ModEnc,Ares
+BuildingTypes | DeploySound | -> InfantryTypes, VehicleTypes | ModEnc,Phobos
+BuildingTypes | DeployToFire | -> VehicleTypes | ModEnc
+BuildingTypes | EnterTransportSound | -> AircraftTypes, InfantryTypes, VehicleTypes | ModEnc
+BuildingTypes | LeaveTransportSound | -> VehicleTypes | ModEnc
+BuildingTypes | MoveSound | -> AircraftTypes, InfantryTypes, VehicleTypes | ModEnc
+BuildingTypes | PixelSelectionBracketDelta | -> AircraftTypes, InfantryTypes, VehicleTypes | ModEnc
+BuildingTypes | StupidHunt | -> AircraftTypes, InfantryTypes, VehicleTypes | ModEnc
+BuildingTypes | VoiceMove | -> AircraftTypes, InfantryTypes, VehicleTypes | ModEnc
+InfantryTypes | ChronoInSound | -> VehicleTypes | ModEnc
+InfantryTypes | ChronoOutSound | -> VehicleTypes | ModEnc
+InfantryTypes | ConsideredAircraft | -> AircraftTypes, VehicleTypes | ModEnc,Phobos
+InfantryTypes | CrateGoodie | -> VehicleTypes | ModEnc,Phobos
+InfantryTypes | Crewed | -> AircraftTypes, BuildingTypes, VehicleTypes | ModEnc
+InfantryTypes | FireAngle | -> BuildingTypes, VehicleTypes | ModEnc
+InfantryTypes | IsTilter | -> VehicleTypes | ModEnc
+InfantryTypes | Turret | -> BuildingTypes, VehicleTypes | ModEnc
+Particles | Report | -> Animations, Weapons | ModEnc
+VehicleTypes | DeployFacing | -> BuildingTypes | ModEnc
+VehicleTypes | Deployer | -> InfantryTypes | ModEnc
+VehicleTypes | NotHuman | -> InfantryTypes | ModEnc
+VehicleTypes | SensorArray | -> BuildingTypes | ModEnc
+VehicleTypes | Smoke.Anim | -> AircraftTypes | ModEnc
+VehicleTypes | Smoke.ChanceDead | -> AircraftTypes | ModEnc
+VehicleTypes | Smoke.ChanceRed | -> AircraftTypes | ModEnc
+VehicleTypes | UndeployDelay | -> InfantryTypes | ModEnc
+Warheads | Anim | -> Weapons | ModEnc
+
+# A2: тега нет в книге нигде (ModEnc2-Rules уже в основном списке выше)
+[Карта-A2-нет-в-книге]
+BuildingTypes | BuildingDieSound | page=Rules | ModEnc
+BuildingTypes | SpyEffect.UnitVeterancy | page=нет | Ares
+InfantryTypes | BerzerkAllowed | page=Rules | ModEnc
+InfantryTypes | Experience.ShowEnemy | page=нет | НЕ НАЙДЕНО
+InfantryTypes | Hero | page=нет | НЕ НАЙДЕНО
+ParticleSystems | AlphaLight | page=нет | НЕ НАЙДЕНО
+Particles | Persistent | page=нет | НЕ НАЙДЕНО
+Projectiles | AN | page=Есть | ModEnc,NonExistent
+Projectiles | AS | page=Есть | ModEnc,NonExistent
+SuperWeaponTypes | Lightning.Seperation | page=нет | НЕ НАЙДЕНО
+VehicleTypes | AutoCrush | page=Rules | ModEnc
+VehicleTypes | BurstDelay4 | page=нет | НЕ НАЙДЕНО
+VehicleTypes | BurstDelay5 | page=нет | НЕ НАЙДЕНО
+VehicleTypes | BurstDelay6 | page=нет | НЕ НАЙДЕНО
+VehicleTypes | BurstDelay7 | page=нет | НЕ НАЙДЕНО
+VehicleTypes | BurstDelay8 | page=нет | НЕ НАЙДЕНО
+VehicleTypes | VoiceSecondaryAttack | page=нет | НЕ НАЙДЕНО
+Warheads | Tree | page=нет | НЕ НАЙДЕНО
+
+# ПРИЛОЖЕНИЕ B - в книге есть, но не с флагом Ares (в ares-режиме подсвечивается, дыры нет)
+[Карта-B-ne-ares]
+AircraftTypes | AllowedToStartInMultiplayer | Phobos
+AircraftTypes | Bunkerable | Phobos
+AircraftTypes | CanBeReversed | Phobos
+AircraftTypes | Cloakable | Phobos
+AircraftTypes | LowSelectionPriority | Phobos
+AircraftTypes | Weight | RA2,YR,Phobos
+BuildingTypes | BurstDelay0 | RA2,YR,Phobos
+BuildingTypes | BurstDelay1 | RA2,YR,Phobos
+BuildingTypes | BurstDelay2 | RA2,YR,Phobos
+BuildingTypes | BurstDelay3 | RA2,YR,Phobos
+BuildingTypes | HealthBar.Hide | Phobos
+BuildingTypes | Passengers | RA2,YR,Phobos
+BuildingTypes | Passengers.BySize | Phobos
+BuildingTypes | SizeLimit | RA2,YR,Phobos
+InfantryTypes | ImmuneToVeins | Phobos
+InfantryTypes | TooBigToFitUnderBridge | RA2,YR,Phobos
+Projectiles | High | RA2,YR,Phobos
+SuperWeaponTypes | Dominator.Captures | Phobos
+SuperWeaponTypes | Message.Ready | Phobos
+SuperWeaponTypes | SW.RequiredHouses | Phobos
+VehicleTypes | ChronoInSound | RA2,YR,Phobos
+VehicleTypes | ChronoOutSound | RA2,YR,Phobos
+VehicleTypes | HealthBar.Hide | Phobos
+VehicleTypes | ImmuneToVeins | Phobos
+VehicleTypes | VoiceIFVRepair | Phobos
+Warheads | Ripple.Radius | Phobos
+
+# ПРИЛОЖЕНИЕ C - Art-теги (art(md).ini): НЕ берём (решение 2026-10-12)
+ModEnc2-секция | AnimHigh | Art
+ModEnc2-секция | AnimLow | Art
+ModEnc2-секция | AnimPalette | Art
+ModEnc2-секция | AnimRate | Art
+ModEnc2-секция | Rotates | Art
+ModEnc2-секция | SpawnDelay | Art
+ModEnc2-секция | Trailer | Art
+Particles | Translucent | Art (страница https://modenc.renegadeprojects.com/Translucent - files=art)
+BuildingTypes | BarrelCompressFrames | Art (страница https://modenc.renegadeprojects.com/BarrelCompressFrames - files=art)
+BuildingTypes | BarrelHoldFrames | Art (страница https://modenc.renegadeprojects.com/BarrelHoldFrames - files=art)
+BuildingTypes | BarrelRecoverFrames | Art (страница https://modenc.renegadeprojects.com/BarrelRecoverFrames - files=art)
+BuildingTypes | BarrelTravel | Art (страница https://modenc.renegadeprojects.com/BarrelTravel - files=art)
+
+# ПРИЛОЖЕНИЕ D - флаги из Non-Existent Flags (ModEnc): в игре НЕ существуют
+# D1: используются картой (добавлять в книгу нельзя - фиктивные)
+[NonExistent-в-карте]
+Projectiles | AN | ModEnc-NonExistent (не читается игрой)
+Projectiles | AS | ModEnc-NonExistent (не читается игрой)
+
+# D2: фиктивных флагов в книге нет (NaturalSmokeLocation удалён 2026-10-12)
+
+# ПРИЛОЖЕНИЕ E - сверка с документацией Ares (ares-developers.github.io/Ares-docs, 313 определений)
+# E1: Ares-флаги, которых нет в книге в целевой секции
+[Ares-E1-нет-в-книге]
+Animation | MakeInfantryOwner | Ares | книга: Animations
+BuildingType | PrerequisiteProcAlternate | Ares | книга: BuildingTypes
+SuperWeapon | Deliver.Buildups | Ares | книга: SuperWeaponTypes
+SuperWeapon | SW.RequiresHouse | Ares | книга: SuperWeaponTypes
+Unit | Survivor.PilotCount | Ares | книга: VehicleTypes
+UnitType | PrerequisitePower | Ares | книга: VehicleTypes
+Warhead | Deployed.Damage | Ares | книга: Warheads
+
+# E2: неверно покрыты - тег есть в книге, но не в той секции, что описывает Ares
+[Ares-E2-другая-секция]
+
+# E3: устаревшие Ares-теги (не добавляем)
+BuildingType | SpyEffect.UnitVeterancy | Ares | устарел (Ares 0.A): заменить на SpyEffect.InfantryVeterancy/VehicleVeterancy
+
+# E4: похоже на ID объектов в примерах, не флаги (пропущено)
+BuildingType | PROC | пример в доках, не флаг
+UnitType | POWER | пример в доках, не флаг
+
+# E-прочее: секции Ares вне охвата книги (UISettings/Country/General/Side и т.п.) не проверялись: 80 определений
+
+# ПРИЛОЖЕНИЕ F - сверка с документацией Phobos v0.4.0.2 (стабильный релиз 2026-01-28, 592 определений)
+# Ручная сверка с книгой 2026-10-12: снято 50 ложных (тег ЕСТЬ в книге: LimboDelivery.Ids/LimboKill.Ids, Convert.* в SuperWeaponTypes,
+#   AttachedSystem, LaserTrail.Types, а также 46 TechnoType-тегов, покрытых частью секций - это не потери).
+# Учтены конвенции: регистр (Ids/IDs), N-индексы (WeaponN->Weapon0), [Index]-плейсхолдеры книги (ConvertN->Convert[Index]), regex-строки конфигов.
+# Art-проверка: теги из ini-блоков доков с 'In `artmd.ini`' НЕ берём (правило пользователя) - пропущено 71 тегов:
+#   AlternateFLH.ApplyVehicle, AttachFireAnimsToParent, AttachedSystem, CloakVisible, CloakVisible.DetectedOnly, Color, ConstrainFireAnimsToCellSpots, CreateUnit, CreateUnit.AIMission, CreateUnit.AlwaysSpawnOnGround, CreateUnit.ConsiderPathfinding, CreateUnit.Facing, CreateUnit.InheritFacings, CreateUnit.InheritTurretFacings, CreateUnit.Mission, CreateUnit.Owner, CreateUnit.RandomFacing, CreateUnit.RemapAnim, CreateUnit.SpawnAnim, CreateUnit.SpawnHeight, CreateUnit.SpawnParachutedInAir, Damage.ApplyOncePerLoop, Damage.DealtByInvoker, Damage.Delay, DeployedPrimaryFireFLH, DeployedSecondaryFireFLH, DetachOnCloak, DetachedReport, ExplodeOnWater, ExtraShadow, FLHKEY.BurstN, FadeDuration, FireAnimDisallowedLandTypes, HideIfNoOre.Threshold, IgnoreVertical, Image, IsHouseColor, IsIntense, LargeFireAnims, LargeFireChances, LargeFireCount, LargeFireDistances, LaserTrail.Types, LaserTrailN.FLH, LaserTrailN.IsOnTurret, LaserTrailN.Type, Layer.UseObjectLayer, OnlyUseLandSequences, Palette, PronePrimaryFireFLH, ProneSecondaryFireFLH, RestrictVisibilityIfCloaked, SegmentLength, ShadowIndex.Frame, ShadowIndices, ShadowIndices.Frame, SmallFireAnims, SmallFireChances, SmallFireCount, SmallFireDistances, SplashAnims, SplashAnims.PickRandom, Thickness, TurretShadow, UseCenterCoordsIfAttached, VisibleTo, VisibleTo.ConsiderInvokerAsOwner, WakeAnim, Warhead.Detonate, Weapon, ZShapePointMove.OnBuildup
+# F1: Phobos-флаги, которых НЕТ в книге ни в одной секции (учтены N/[Index]-варианты)
+[Phobos-F1-нет-в-книге]
+
+# F2: снято ручной сверкой - 44 TechnoType-тегов есть в книге в части TechnoType-секций (доки пишут generic TechnoType;
+#      книга ограничивает скоуп - не потеряшки; список воссоздаётся check_phobos_coverage.py)
+
+# Примечание: Warhead-фича 'Convert TechnoType on impact' (доки, секция Warheads) использует те же имена ConvertN.*, что и
+#   SuperWeapon-фича 'Convert TechnoType' (в книге как Convert[Index].* под SuperWeaponTypes) - при необходимости валидации Warheads-секции добавь отдельно.
+# F-прочее: секции вне охвата книги не проверялись (ScriptType/Actions/Events/Side/TerrainType/General/AudioVisual/Sidebar/ToolTips/DigitalDisplayTypes/LaserTrailTypes и т.п.)
+
+# ИТОГО: основной список 2 + A1 32 + A2 18 + B 26 + C(Art, не берём) 12 + D1 2 + D2 0 | карта 81
+#         Ares-сверка: E1 7 + E2 0 + E3 1 + E4 2 (вне охвата: 80)
+#         Phobos-сверка: OK 542 + F1 0 (F2/F3 сняты: 44) + снято как 'есть в книге': 50 + art-блоки: 71 (вне охвата: 43)
