@@ -146,8 +146,9 @@ proc ::Logging::notice {msg} {
 # --- Write accumulated log messages to mission.log ---
 # Saves the log file and optionally opens it in the default application.
 # Supports text and JSON output formats via ::CLI::cmd_format.
-proc logwrite {} {
-    set logpath "[set ::Data::path]mission.log"
+# Optional logname lets batch mode save a per-map log (e.g. "x.map.log").
+proc logwrite {{logname "mission.log"}} {
+    set logpath "[set ::Data::path]$logname"
     if {$::Data::savelog} {
         set mode "a+"
     } else {

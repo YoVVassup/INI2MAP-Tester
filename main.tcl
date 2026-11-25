@@ -231,6 +231,12 @@ if {$::CLI::batch_mode} {
         }
     }
 
+    # Batch never auto-opens per-map logs (that would pop one window per
+    # map) and always rewrites them (per-map logs ignore the savelog flag,
+    # matching the previous batch behavior).
+    set ::Data::auto_open_log 0
+    set ::Data::savelog 0
+
     foreach map_path $map_files {
         set map_name [file tail $map_path]
         if {!$::CLI::cmd_quiet} {
@@ -285,26 +291,31 @@ if {$::CLI::batch_mode} {
 
         lappend results [list $map_name $ec $::Logging::error_count $::Logging::warning_count $::Logging::notice_count]
 
-        # Write individual log file
-        set logpath "[set ::Data::path]$map_name.log"
-        if {[catch {open $logpath w} fh]} {
-            ::Logging::error "Cannot write log for $map_name"
+        # Write individual log file: JSON per map when --format json
+        # (json_report.exe turns it into an HTML report), plain text otherwise.
+        if {$::CLI::cmd_format eq "json"} {
+            logwrite "$map_name.log"
         } else {
-            if {[catch {
-                puts $fh "\n---- MISSION REPORT FOR $map_name ----"
-                foreach line $::Data::maperr {
-                    puts $fh $line
+            set logpath "[set ::Data::path]$map_name.log"
+            if {[catch {open $logpath w} fh]} {
+                ::Logging::error "Cannot write log for $map_name"
+            } else {
+                if {[catch {
+                    puts $fh "\n---- MISSION REPORT FOR $map_name ----"
+                    foreach line $::Data::maperr {
+                        puts $fh $line
+                    }
+                    puts $fh ""
+                    puts $fh "---- SUMMARY ----"
+                    puts $fh "Errors:   $::Logging::error_count"
+                    puts $fh "Warnings: $::Logging::warning_count"
+                    puts $fh "Notices:  $::Logging::notice_count"
+                    puts $fh "\nTotal processing time: [expr {[clock milliseconds] - $::Data::started}]ms"
+                } write_err]} {
+                    ::Logging::error "Error writing log for $map_name: $write_err"
                 }
-                puts $fh ""
-                puts $fh "---- SUMMARY ----"
-                puts $fh "Errors:   $::Logging::error_count"
-                puts $fh "Warnings: $::Logging::warning_count"
-                puts $fh "Notices:  $::Logging::notice_count"
-                puts $fh "\nTotal processing time: [expr {[clock milliseconds] - $::Data::started}]ms"
-            } write_err]} {
-                ::Logging::error "Error writing log for $map_name: $write_err"
+                catch {close $fh}
             }
-            catch {close $fh}
         }
 
         if {!$::CLI::cmd_quiet} {
