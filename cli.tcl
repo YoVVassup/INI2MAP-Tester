@@ -151,6 +151,9 @@ proc ::CLI::resolve_batch {} {
     set maps [list]
 
     if {$batch_pattern ne ""} {
+        # Windows paths use backslashes, but glob treats \ as an escape
+        # character - normalize so "Build\*.map" and "Build/*.map" both work.
+        set batch_pattern [string map [list "\\" "/"] $batch_pattern]
         # Check if it's a directory
         if {[file isdirectory $batch_pattern]} {
             foreach ext {.map .yrm .mpr} {

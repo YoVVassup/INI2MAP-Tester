@@ -189,7 +189,7 @@ Log saved to: <project dir>/mission.log
 ```
 
 Run with `--format json` to write `mission.log` as JSON, then
-`third_party\json_report\json_report.exe mission.log` renders it as a standalone HTML report
+`json_report.exe mission.log` renders it as a standalone HTML report
 (summary cards, severity filter chips, live search; `-o out.html` picks the
 output path, `-open` launches the browser). The utility is 32-bit and runs
 on Windows XP (PE32, subsystem 5.1, no ucrt).
@@ -197,12 +197,36 @@ on Windows XP (PE32, subsystem 5.1, no ucrt).
 ### Run with specific options
 
 ```bash
-tclsh86.exe main.tcl --batch *.map
+tclsh86.exe main.tcl --batch "*.map"
 ```
 
 ### Interactive launcher
 
-Double-click `__mission.bat` for an interactive menu.
+Double-click `__mission.bat` for an interactive menu:
+
+```
+  [1] Validate map
+  [2] Generate baseline (INI checks only)
+  [3] Validate map with baseline filter
+  [4] Validate + HTML report (mission.html)
+  [5] Batch validate all maps + HTML per map
+  [0] Cancel
+```
+
+The launcher also accepts direct arguments (no menu):
+
+```bash
+__mission.bat --batch-html Build           # a directory
+__mission.bat --batch-html "Build\*.map"   # a wildcard pattern
+```
+
+Both validate every matching map with `--format json` (no log auto-open) and
+then run `json_report.exe` on each `<mapfile>.log`, writing `<mapfile>.html`
+next to the map.
+
+Each build variant also ships `Build\<variant>\__batch.bat`: drag & drop any
+number of map files, folders or wildcard patterns onto it to validate them and
+get one HTML report per map (the browser is not opened automatically).
 
 ### Built executables (build.bat)
 
@@ -556,8 +580,22 @@ tclsh86.exe crypto_utils.tcl rulesmo.enc
 Validate multiple maps at once:
 
 ```bash
-tclsh86.exe main.tcl --batch *.map --format json
+tclsh86.exe main.tcl --batch "*.map" --format json
 ```
+
+Batch mode always writes a per-map log next to each map (`<mapfile>.log`,
+e.g. `all01.map.log`) rather than a single `mission.log`. With `--format json`
+these are JSON logs that `json_report.exe` renders as a standalone HTML report
+(summary cards, severity filter chips, live search); the default text format
+writes a plain-text report instead.
+
+```bash
+json_report.exe all01.map.log    # -> all01.map.html
+```
+
+`__mission.bat --batch-html <pattern|dir>` and the per-variant
+`Build\<variant>\__batch.bat` helper wrap both steps — see
+[Interactive launcher](#interactive-launcher).
 
 **Example JSON output:**
 

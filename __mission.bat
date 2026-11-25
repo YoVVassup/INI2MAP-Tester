@@ -10,6 +10,7 @@ rem    __mission.bat <map_file>               - Direct validation
 rem    __mission.bat --baseline               - Generate baseline.log
 rem    __mission.bat --baseline-filter f.map  - Validate with baseline filter
 rem    __mission.bat --html <map_file>        - Validate (JSON log) + HTML report
+rem    __mission.bat --batch-html <pattern|dir> - Validate many maps + HTML per map
 rem    __mission.bat --help                   - Show help
 rem ============================================================================
 
@@ -29,10 +30,14 @@ if "%~1"=="--baseline-filter" (
 rem Handle --html: validate with JSON log, then render mission.html
 if "%~1"=="--html" goto :html_mode
 
+rem Handle --batch-html: validate many maps, render an HTML per map
+if "%~1"=="--batch-html" goto :batch_html
+
 rem Direct mode: pass all arguments to tclsh
 @tclsh main.tcl %*
 goto :eof
 
+rem Interactive menu
 :interactive
 echo.
 echo  ============================================
@@ -45,6 +50,7 @@ echo   [1] Validate map
 echo   [2] Generate baseline (INI checks only)
 echo   [3] Validate map with baseline filter
 echo   [4] Validate + HTML report (mission.html)
+echo   [5] Batch validate all maps + HTML per map
 echo   [0] Cancel
 echo.
 
@@ -55,6 +61,7 @@ if "%op%"=="1" goto :select_map
 if "%op%"=="2" goto :generate_baseline
 if "%op%"=="3" goto :validate_with_filter
 if "%op%"=="4" goto :select_map_html
+if "%op%"=="5" goto :batch_all
 goto :interactive
 
 rem ============================================================================
@@ -323,6 +330,67 @@ if errorlevel 1 (
 echo  [OK] HTML report opened: !mapdir!mission.html
 exit /b %ec%
 
+rem ============================================================================
+rem  Batch validation + one HTML report per map (interactive menu [5])
+rem ============================================================================
+:batch_all
+echo.
+echo  ============================================
+echo   Batch validation + HTML reports
+echo  ============================================
+echo.
+set "bfilter="
+if exist "baseline.log" (
+    set "bfilter=--baseline-filter baseline.log"
+    echo  Using baseline filter: baseline.log
+)
+@tclsh main.tcl --batch "*.map" %bfilter% --format json --no-log-open
+set "ec=%errorlevel%"
+echo.
+if not exist "json_report.exe" (
+    echo  [ERROR] json_report.exe not found in project root. Run build.bat first.
+    echo.
+    pause
+    goto :interactive
+)
+set "html_count=0"
+for %%f in (*.map *.yrm *.mpr) do if exist "%%~ff.log" (
+    json_report.exe "%%~ff.log"
+    if not errorlevel 1 set /a html_count+=1
+)
+echo.
+if !html_count!==0 (
+    echo  [ERROR] No per-map JSON logs found - HTML skipped.
+) else (
+    echo  [OK] HTML report written next to each of !html_count! map^(s^).
+)
+echo.
+pause
+goto :eof
+
+rem ============================================================================
+rem  Batch validation + HTML per map (direct mode: --batch-html <pattern|dir>)
+rem ============================================================================
+:batch_html
+if "%~2"=="" (
+    echo Usage: __mission.bat --batch-html ^<pattern^|directory^>
+    exit /b 1
+)
+set "bfilter="
+if exist "baseline.log" set "bfilter=--baseline-filter baseline.log"
+@tclsh main.tcl --batch "%~2" %bfilter% --format json --no-log-open
+set "ec=%errorlevel%"
+if not exist "json_report.exe" (
+    echo  [ERROR] json_report.exe not found in project root. Run build.bat first.
+    exit /b 3
+)
+if exist "%~2\" (
+    for %%f in ("%~2\*.map" "%~2\*.yrm" "%~2\*.mpr") do if exist "%%~ff.log" json_report.exe "%%~ff.log"
+) else if exist "%~2" (
+    for %%f in ("%~2") do if exist "%%~ff.log" json_report.exe "%%~ff.log"
+)
+exit /b %ec%
+
 :show_help
 echo.
 echo  INI2MAP Tester 1.0 - Map validation tool for RA2/YR
@@ -335,6 +403,7 @@ echo    __mission.bat --baseline               Generate baseline.log
 echo    __mission.bat --baseline-filter ^<file^> Validate with baseline filter
 echo    __mission.bat --batch ^<pattern^>        Validate multiple maps
 echo    __mission.bat --html ^<map_file^>        Validate + HTML report (mission.html)
+echo    __mission.bat --batch-html ^<pattern^>    Validate many maps + HTML per map
 echo    __mission.bat --quiet ^<map_file^>       Suppress console output
 echo    __mission.bat --help                   Show this help
 echo.

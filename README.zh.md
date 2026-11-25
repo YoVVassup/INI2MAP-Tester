@@ -189,7 +189,7 @@ Log saved to: <project dir>/mission.log
 ```
 
 使用 `--format json` 可将 `mission.log` 写为 JSON，随后
-`third_party\json_report\json_report.exe mission.log` 会把它渲染为独立的 HTML 报告
+`json_report.exe mission.log` 会把它渲染为独立的 HTML 报告
 （汇总卡片、严重级别筛选按钮、实时搜索；`-o out.html` 指定输出路径，
 `-open` 启动浏览器）。该工具为 32 位，可在 Windows XP 上运行
 （PE32、subsystem 5.1、无 ucrt）。
@@ -197,12 +197,35 @@ Log saved to: <project dir>/mission.log
 ### 使用特定选项运行
 
 ```bash
-tclsh86.exe main.tcl --batch *.map
+tclsh86.exe main.tcl --batch "*.map"
 ```
 
 ### 交互式启动器
 
-双击 `__mission.bat` 打开交互式菜单。
+双击 `__mission.bat` 打开交互式菜单：
+
+```
+  [1] Validate map
+  [2] Generate baseline (INI checks only)
+  [3] Validate map with baseline filter
+  [4] Validate + HTML report (mission.html)
+  [5] Batch validate all maps + HTML per map
+  [0] Cancel
+```
+
+启动器也接受直接参数（不显示菜单）：
+
+```bash
+__mission.bat --batch-html Build           # 目录
+__mission.bat --batch-html "Build\*.map"   # 通配符模式
+```
+
+两者都会以 `--format json` 校验所有匹配的地图（不自动打开日志），随后对
+每个 `<mapfile>.log` 运行 `json_report.exe`，在地图旁写出 `<mapfile>.html`。
+
+每个构建变体还附带 `Build\<variant>\__batch.bat`：把任意数量的地图文件、
+目录或通配符模式拖放到它上面即可校验，并为每张地图生成 HTML 报告
+（不会自动打开浏览器）。
 
 ### 构建出的可执行文件（build.bat）
 
@@ -552,8 +575,20 @@ tclsh86.exe crypto_utils.tcl rulesmo.enc
 一次校验多张地图：
 
 ```bash
-tclsh86.exe main.tcl --batch *.map --format json
+tclsh86.exe main.tcl --batch "*.map" --format json
 ```
+
+批处理模式总是在每张地图旁写入单独的日志（`<mapfile>.log`，例如
+`all01.map.log`），而不是单一的 `mission.log`。使用 `--format json` 时这些
+是 JSON 日志，`json_report.exe` 可将其渲染为独立的 HTML 报告（摘要卡片、
+严重级别筛选、实时搜索）；默认文本格式则写入纯文本报告。
+
+```bash
+json_report.exe all01.map.log    # -> all01.map.html
+```
+
+`__mission.bat --batch-html <pattern|dir>` 与 `Build\<variant>\__batch.bat`
+辅助脚本封装了以上两步 —— 参见[交互式启动器](#交互式启动器)。
 
 **JSON 输出示例：**
 

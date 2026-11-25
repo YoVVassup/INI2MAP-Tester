@@ -128,7 +128,9 @@ proc mapcheck {} {
     }
 
     if {$::Data::writeanims == 1 && $::Data::animlog ne ""} {
-        logputs $::Data::animlog
+        foreach m [split $::Data::animlog "\n"] {
+            if {$m ne ""} { logputs $m }
+        }
     }
 
     if {$timing} {

@@ -189,7 +189,7 @@ Log saved to: <project dir>/mission.log
 ```
 
 Запуск с `--format json` пишет `mission.log` в формате JSON, после чего
-`third_party\json_report\json_report.exe mission.log` собирает из него автономный HTML-отчёт
+`json_report.exe mission.log` собирает из него автономный HTML-отчёт
 (карточки сводки, чипы фильтра severity, живой поиск; `-o out.html` — путь
 вывода, `-open` — открыть в браузере). Утилита 32-битная и работает на
 Windows XP (PE32, подсистема 5.1, без ucrt).
@@ -197,12 +197,36 @@ Windows XP (PE32, подсистема 5.1, без ucrt).
 ### Запуск с опциями
 
 ```bash
-tclsh86.exe main.tcl --batch *.map
+tclsh86.exe main.tcl --batch "*.map"
 ```
 
 ### Интерактивный лаунчер
 
-Дважды кликните на `__mission.bat` для интерактивного меню.
+Дважды кликните на `__mission.bat` для интерактивного меню:
+
+```
+  [1] Validate map
+  [2] Generate baseline (INI checks only)
+  [3] Validate map with baseline filter
+  [4] Validate + HTML report (mission.html)
+  [5] Batch validate all maps + HTML per map
+  [0] Cancel
+```
+
+Лаунчер также принимает аргументы напрямую (без меню):
+
+```bash
+__mission.bat --batch-html Build           # директория
+__mission.bat --batch-html "Build\*.map"   # шаблон wildcard
+```
+
+Оба варианта валидируют все подходящие карты с `--format json` (без
+автооткрытия лога), а затем запускают `json_report.exe` для каждого
+`<mapfile>.log`, записывая `<mapfile>.html` рядом с картой.
+
+В каждой вариации сборки есть `Build\<variant>\__batch.bat`: перетащите на
+него любое количество файлов карт, папок или wildcard-шаблонов — он валидирует
+их и создаст HTML-отчёт для каждой карты (браузер не открывается автоматически).
 
 ### Собранные исполняемые файлы (build.bat)
 
@@ -560,8 +584,22 @@ tclsh86.exe crypto_utils.tcl rulesmo.enc
 Валидация нескольких карт одновременно:
 
 ```bash
-tclsh86.exe main.tcl --batch *.map --format json
+tclsh86.exe main.tcl --batch "*.map" --format json
 ```
+
+Пакетный режим всегда записывает отдельный лог рядом с каждой картой
+(`<mapfile>.log`, например `all01.map.log`) вместо единого `mission.log`.
+При `--format json` это JSON-логи, которые `json_report.exe` превращает в
+автономный HTML-отчёт (карточки сводки, фильтры по серьёзности, живой поиск);
+в текстовом формате по умолчанию записывается обычный текстовый отчёт.
+
+```bash
+json_report.exe all01.map.log    # -> all01.map.html
+```
+
+`__mission.bat --batch-html <pattern|dir>` и помощник
+`Build\<variant>\__batch.bat` объединяют оба шага — см.
+[Интерактивный лаунчер](#интерактивный-лаунчер).
 
 **Пример JSON-вывода:**
 
