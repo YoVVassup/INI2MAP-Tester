@@ -26,6 +26,9 @@ README.ru.md text eol=crlf
 # Windows command scripts: CRLF for cmd.exe label/goto compatibility.
 *.bat text eol=crlf
 
+# __mission.bat is historically LF - keep it LF (overrides *.bat above).
+__mission.bat text eol=lf
+
 # Binaries: never normalize line endings, never diff.
 *.dll binary
 *.exe binary
