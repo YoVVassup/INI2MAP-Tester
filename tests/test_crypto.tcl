@@ -1,7 +1,7 @@
 #----------------------------------------------------------------------------------------------------------
 # test_crypto.tcl - Unit tests for crypto.tcl
 #----------------------------------------------------------------------------------------------------------
-# Tests: SHA-256 computation, V2 format detection, hash verification
+# Tests: SHA-256 computation, V2 format detection, V1-removed errors, hash verification
 #----------------------------------------------------------------------------------------------------------
 
 package require tcltest
@@ -74,7 +74,7 @@ test v2-detect-cv02 "detect V2 magic bytes" -body {
     expr {$result ? 1 : 0}
 } -result 1
 
-test v2-detect-v1 "detect V1 format (no CV02 magic)" -body {
+test v2-detect-v1 "non-CV02 file is not V2 (V1 removed)" -body {
     set tmpfile [file join $test_tmpdir "test_v1.enc"]
     set fh [open $tmpfile wb]
     puts -nonewline $fh "ABCD"
@@ -83,6 +83,16 @@ test v2-detect-v1 "detect V1 format (no CV02 magic)" -body {
     file delete $tmpfile
     expr {$result ? 1 : 0}
 } -result 0
+
+test v1-decrypt-removed "decrypting a non-CV02 file errors (V1 removed)" -body {
+    set tmpfile [file join $test_tmpdir "test_v1_dec.enc"]
+    set fh [open $tmpfile wb]
+    puts -nonewline $fh "ABCD"
+    close $fh
+    set code [catch {::Crypto::_decrypt_raw $tmpfile} msg]
+    file delete $tmpfile
+    list $code [string match "*V1 support was removed*" $msg]
+} -result {1 1}
 
 test v2-detect-short "detect V2 with short file" -body {
     set tmpfile [file join $test_tmpdir "test_short.enc"]

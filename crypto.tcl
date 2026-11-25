@@ -165,15 +165,6 @@ proc ::Crypto::init {{dll_path ""}} {
 
     # Register DLL functions via ffidl
     if {[catch {
-        ::ffidl::callout ::Crypto::dll_decrypt_to_buffer \
-            {pointer-utf8 pointer-var} pointer \
-            [::ffidl::symbol $crypto_dll_path decrypt_to_buffer]
-    } err]} {
-        puts stderr "FATAL: decrypt_to_buffer: $err"
-        return 0
-    }
-
-    if {[catch {
         ::ffidl::callout ::Crypto::dll_free_buffer \
             {pointer} void \
             [::ffidl::symbol $crypto_dll_path free_buffer]
@@ -286,11 +277,14 @@ proc ::Crypto::_subprocess_decrypt {enc_path} {
 }
 
 # Common decrypt core: temp copy → DLL call → len check → memcpy → cleanup.
-# Returns raw binary data. salt_hex="" means V1 (no salt).
-proc ::Crypto::_decrypt_core {enc_path {salt_hex ""}} {
+# Returns raw binary data. V2 (CV02) only - V1 support was removed.
+proc ::Crypto::_decrypt_core {enc_path salt_hex} {
     variable loaded
-    variable v2_salt
     if {!$loaded} { error "Crypto module not initialized." }
+    if {$salt_hex eq ""} { error "V2 file but no salt provided." }
+    if {![::Crypto::is_v2_format $enc_path]} {
+        error "Unsupported format (V1 support was removed): $enc_path"
+    }
 
     # Only ever delete the temporary copy - never the original .enc file
     set native_path $enc_path
@@ -300,16 +294,10 @@ proc ::Crypto::_decrypt_core {enc_path {salt_hex ""}} {
     }
 
     set out_len_buf [binary format i 0]
-    if {$salt_hex eq ""} {
-        # V1
-        set buf_ptr [::Crypto::dll_decrypt_to_buffer $native_path out_len_buf]
-    } else {
-        # V2
-        set dll_hash [::Crypto::get_dll_hash]
-        set salt_bin [binary format H* $salt_hex]
-        set salt_len [string length $salt_bin]
-        set buf_ptr [::Crypto::dll_decrypt_to_buffer_with_salt $native_path out_len_buf $dll_hash $salt_bin $salt_len]
-    }
+    set dll_hash [::Crypto::get_dll_hash]
+    set salt_bin [binary format H* $salt_hex]
+    set salt_len [string length $salt_bin]
+    set buf_ptr [::Crypto::dll_decrypt_to_buffer_with_salt $native_path out_len_buf $dll_hash $salt_bin $salt_len]
 
     if {$buf_ptr == 0} {
         set err_msg "decryption failed"
@@ -335,17 +323,18 @@ proc ::Crypto::_decrypt_core {enc_path {salt_hex ""}} {
 }
 
 # Raw decrypt (no cache, no encoding conversion): subprocess or in-process.
+# V2 (CV02) only - V1 support was removed.
 proc ::Crypto::_decrypt_raw {enc_path} {
     variable use_subprocess
     variable v2_salt
+    if {![::Crypto::is_v2_format $enc_path]} {
+        error "Unsupported format (V1 support was removed): $enc_path"
+    }
+    if {$v2_salt eq ""} { error "V2 file but no salt provided." }
     if {$use_subprocess} {
         return [::Crypto::_subprocess_decrypt $enc_path]
     }
-    if {[::Crypto::is_v2_format $enc_path]} {
-        if {$v2_salt eq ""} { error "V2 file but no salt provided." }
-        return [::Crypto::_decrypt_core $enc_path $v2_salt]
-    }
-    return [::Crypto::_decrypt_core $enc_path]
+    return [::Crypto::_decrypt_core $enc_path $v2_salt]
 }
 
 # Pre-decrypt a batch of .enc files with a single subprocess spawn (or
@@ -375,9 +364,8 @@ proc ::Crypto::prefetch_enc_files {enc_paths} {
     }
 
     foreach p $existing payload $payloads {
-        set salt ""
-        if {[::Crypto::is_v2_format $p]} { set salt $v2_salt }
-        dict set prefetched $p [list $salt $payload]
+        # V1 support was removed: every cached payload is V2 with the effective salt
+        dict set prefetched $p [list $v2_salt $payload]
     }
 }
 
@@ -391,7 +379,7 @@ proc ::Crypto::decrypt_ini_to_string {enc_path} {
     set from_cache 0
     if {[dict exists $prefetched $enc_path]} {
         lassign [dict get $prefetched $enc_path] entry_salt payload
-        if {$entry_salt eq "" || $entry_salt eq $v2_salt} {
+        if {$entry_salt eq $v2_salt} {
             set prefetched [dict remove $prefetched $enc_path]
             set bin_data $payload
             set from_cache 1
@@ -443,7 +431,7 @@ proc ::Crypto::decrypt_buffer_v2 {enc_path {salt_hex ""}} {
         lassign [dict get $prefetched $enc_path] entry_salt payload
         set eff_salt $salt_hex
         if {$eff_salt eq ""} { set eff_salt $v2_salt }
-        if {$entry_salt eq "" || $entry_salt eq $eff_salt} {
+        if {$entry_salt eq $eff_salt} {
             set prefetched [dict remove $prefetched $enc_path]
             return $payload
         }

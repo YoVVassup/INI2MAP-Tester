@@ -33,10 +33,6 @@ if {![file exists $dll_path]} {
 if {[catch {
     ::ffidl::callout get_version {} pointer-utf8 [::ffidl::symbol $dll_path get_version]
     ::ffidl::callout test_key {} int [::ffidl::symbol $dll_path test_key]
-    ::ffidl::callout process_ini_file {pointer-utf8 pointer-utf8 int} int [::ffidl::symbol $dll_path process_ini_file]
-    ::ffidl::callout encrypt_to_memory {pointer-utf8 int pointer-var} pointer [::ffidl::symbol $dll_path encrypt_to_memory]
-    ::ffidl::callout decrypt_to_buffer {pointer-utf8 pointer-var} pointer [::ffidl::symbol $dll_path decrypt_to_buffer]
-    ::ffidl::callout decrypt_from_memory {pointer int pointer-var} pointer [::ffidl::symbol $dll_path decrypt_from_memory]
     ::ffidl::callout free_buffer {pointer} void [::ffidl::symbol $dll_path free_buffer]
     ::ffidl::callout crypto_last_error_msg {} pointer-utf8 [::ffidl::symbol $dll_path crypto_last_error_msg]
     ::ffidl::callout get_dll_hash {} pointer-utf8 [::ffidl::symbol $dll_path get_dll_hash]
@@ -61,15 +57,6 @@ if {[test_key] != 0} {
 
 set dll_hash_val [get_dll_hash]
 puts "DLL SHA-256: $dll_hash_val"
-
-proc encrypt_ini {input output} {
-    set res [process_ini_file $input $output 1]
-    if {$res != 0} {
-        puts "Encryption error (code $res): [crypto_last_error_msg]"
-        return 0
-    }
-    return 1
-}
 
 proc encrypt_ini_v2 {input output salt_hex} {
     if {![regexp {^[0-9a-fA-F]+$} $salt_hex] || [string length $salt_hex] % 2 != 0} {
@@ -312,35 +299,41 @@ if {[llength $argv] > 0} {
     foreach file $files {
         set base [file rootname $file]
         set ext [file extension $file]
-        if {$salt_hex ne ""} {
-            puts "Encrypting (v2): $file -> ${base}_enc${ext}"
-            encrypt_ini_v2 $file "${base}_enc${ext}" $salt_hex
-        } else {
-            puts "Encrypting (v1): $file -> ${base}_enc${ext}"
-            encrypt_ini $file "${base}_enc${ext}"
+        if {$salt_hex eq ""} {
+            puts "ERROR: no salt for $file. V1 encryption was removed; pass --salt <hex> or set v2_salt in settings.cfg"
+            exit 1
         }
+        puts "Encrypting (v2): $file -> ${base}_enc${ext}"
+        encrypt_ini_v2 $file "${base}_enc${ext}" $salt_hex
     }
 } else {
-    puts "Testing in-memory round-trip..."
-    set test_data "Test data for encryption"
-    set enc_len [binary format i 0]
-    set enc_ptr [encrypt_to_memory $test_data [string length $test_data] enc_len]
-    if {$enc_ptr == 0} {
-        puts "Encryption failed: [crypto_last_error_msg]"
+    puts "Testing V2 round-trip..."
+    set salt_hex [crypto_config_value "v2_salt"]
+    if {$salt_hex eq ""} {
+        puts "ERROR: v2_salt not set in settings.cfg (V1 round-trip was removed)"
         exit 1
     }
-    binary scan $enc_len i enc_len_val
-    set dec_len [binary format i 0]
-    set dec_ptr [decrypt_from_memory $enc_ptr $enc_len_val dec_len]
-    if {$dec_ptr == 0} {
-        puts "Decryption failed: [crypto_last_error_msg]"
-        exit 1
+    set tmp_base [file join [file normalize [pwd]] "selftest_[pid]"]
+    if {[info exists ::env(TEMP)] && $::env(TEMP) ne ""} {
+        set tmp_base [file join [file normalize $::env(TEMP)] "ini2map_selftest_[pid]"]
     }
-    binary scan $dec_len i dec_len_val
-    set dest_buf [binary format a$dec_len_val ""]
-    dll_memcpy dest_buf $dec_ptr $dec_len_val
-    catch { free_buffer $dec_ptr }
-    if {$dest_buf eq $test_data} {
+    set tmp_in  "${tmp_base}.ini"
+    set tmp_enc "${tmp_base}.enc"
+    set tmp_out "${tmp_base}.out"
+    set test_data "Test data for encryption\r\n"
+    set fh [open $tmp_in wb]
+    puts -nonewline $fh $test_data
+    close $fh
+    set ok [encrypt_ini_v2 $tmp_in $tmp_enc $salt_hex]
+    if {$ok} { set ok [decrypt_ini_v2 $tmp_enc $tmp_out $salt_hex] }
+    set got ""
+    if {[file exists $tmp_out]} {
+        set fh [open $tmp_out rb]
+        set got [read $fh]
+        close $fh
+    }
+    file delete -force $tmp_in $tmp_enc $tmp_out
+    if {$ok && $got eq $test_data} {
         puts "Round-trip test PASSED"
     } else {
         puts "Round-trip test FAILED"

@@ -145,8 +145,8 @@ test cu-usage "usage text shown when no files and no mode" -body {
 } -result {1 1 1 1 1 1}
 
 # --------------------------------------------------------------------------
-# Test 6: decrypt_buffer_v2 still works after the in-memory round-trip self-test
-# (regression: free_buffer on the encrypt_to_memory result corrupts the heap
+# Test 6: decrypt_buffer_v2 still works after the round-trip self-test
+# (regression: a buggy self-test native call corrupts the heap
 # and crashes every subsequent native call)
 # --------------------------------------------------------------------------
 test cu-decrypt-buffer-v2 "decrypt_buffer_v2 works after round-trip self-test" -body {
