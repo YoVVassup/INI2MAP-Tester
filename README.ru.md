@@ -12,10 +12,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Tcl-8.6-blue?logo=tcl&logoColor=white" alt="Tcl">
   <img src="https://img.shields.io/badge/Platform-Windows-0078d4?logo=windows&logoColor=white" alt="Windows">
-  <img src="https://img.shields.io/badge/Crypto-NaCl--XSalsa20-green" alt="Crypto">
-  <img src="https://img.shields.io/badge/Encryption-V2--HKDF--SHA256-orange" alt="Encryption">
   <img src="https://img.shields.io/badge/Maps-124%2B%20checks-brightgreen" alt="Checks">
-  <img src="https://img.shields.io/badge/Tests-1124%2F1124%20passing-success" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-1150%20tests-blue" alt="Tests">
   <img src="https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-blue" alt="License">
 </p>
 
@@ -31,10 +29,10 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  🔐 ШИФРОВАНИЕ                                                  │
-│  ├── V2 Мультифакторное: hash DLL + salt + HKDF-SHA256          │
-│  ├── V1 Legacy: DEFAULT_KEY (XSalsa20 + Poly1305)               │
-│  └── Автоопределение по magic bytes "CV02"                      │
+│  🔒 ЗАЩИЩЁННЫЕ РЕСУРСЫ                                          │
+│  ├── Правила и аудио-индексы идут зашифрованными (.enc)         │
+│  ├── Расшифровка только в памяти, на диск не пишется            │
+│  └── Runtime-файлы проверяются до любой расшифровки             │
 ├─────────────────────────────────────────────────────────────────┤
 │  📁 ПОДДЕРЖКА ФАЙЛОВ                                            │
 │  ├── Карты: .map, .yrm, .mpr                                    │
@@ -70,9 +68,6 @@
 │                                                                 │
 │  ✓ CryptoVisionLib_xp.dll (совместимая с XP, статическая)       │
 │    └── Поставляется в third_party/CryptoVisionLib/              │
-│                                                                 │
-│  ○ PatchDll.exe (опциональная)                                  │
-│    └── Нужна только для переключения ключа шифрования           │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -83,14 +78,14 @@
 │
 ├── 📄 main.tcl                  Точка входа
 ├── 📄 __mission.bat             Интерактивный лаунчер
-├── 📄 settings.cfg              Конфигурация MOMT (хеш, соль, режим игры)
-├── 📄 settings-ra2.cfg          Конфигурация RA2MT (тот же хеш/соль, файлы RA2)
-├── 📄 settings-yr.cfg           Конфигурация RA2YRMT (тот же хеш/соль, файлы YR)
+├── 📄 settings.cfg              Конфигурация MOMT (набор правил, режим игры)
+├── 📄 settings-ra2.cfg          Конфигурация RA2MT (файлы RA2, режим ra2)
+├── 📄 settings-yr.cfg           Конфигурация RA2YRMT (файлы YR, режим yr)
 ├── 🎨 MOMT.ico                  Иконка приложения (сборка MOMT)
 ├── 🎨 RA2MT.ico                 Иконка приложения (сборка RA2MT)
 ├── 🎨 RA2YRMT.ico               Иконка приложения (сборка RA2YRMT)
 │
-├── 📁 original_files/           Оригинальные файлы для перешифровки
+├── 📁 original_files/           Исходники для сборки (maintainer only)
 │   ├── Mental Omega/            9 файлов: rulesmo, aimo, artmo, soundmo, thememo, evamo, audio*
 │   ├── Red Alert 2/             7 файлов: rules, ai, art, sound, theme, eva, audio_ra2
 │   └── Red Alert 2 Yuris Revenge/  8 файлов: rulesmd, aimd, artmd, soundmd, thememd, evamd, audio*
@@ -100,8 +95,8 @@
 ├── 🔒 rulesmd.enc               Набор правил RA2YRMT (rulesmd, aimd, artmd, soundmd, thememd, evamd)
 ├── 🔒 audio_ra2.enc             Аудио-индексы (audio_ra2, audio_yr, audio - общие для всех вариантов)
 │
-├── 📄 crypto.tcl                Модуль криптографии (ffidl + DLL)
-├── 📄 crypto_utils.tcl          Утилита шифрования/дешифровки
+├── 📄 crypto.tcl                Модуль криптографии
+├── 📄 crypto_utils.tcl          Инструменты шифрования (maintainer only)
 ├── 📄 cli.tcl                   Парсер аргументов командной строки
 ├── 📄 config.tcl                Загрузчик настроек
 ├── 📄 constants.tcl             Игровые константы
@@ -110,7 +105,7 @@
 ├── 📄 orchestrator.tcl          Главный оркестратор валидации
 ├── 📄 cache.tcl                 Кэширование правил/аудио для пакетного режима
 ├── 📄 utils.tcl                 Общие утилиты
-├── 📄 audio_parser.tcl          Парсер аудио-индексов (дешифрует .enc в памяти)
+├── 📄 audio_parser.tcl          Парсер аудио-индексов
 ├── 📄 rules_parser.tcl          Парсер INI правил
 ├── 📁 rules_parser/             Подмодули парсера правил (8 файлов)
 ├── 📄 map_parser.tcl            Парсер файлов карт
@@ -128,10 +123,10 @@
 │   ├── CryptoVisionLib/         Исходник крипто-DLL + build_xp.bat
 │   ├── ffidl/                   Исходник ffidl + build_xp.bat
 │   ├── json_report/             Исходник JSON -> HTML отчёта + build_xp.bat
-│   ├── patch_key/               Исходник PatchDll + build_xp.bat
+│   ├── patch_key/               Исходник инструмента сопровождающего + build_xp.bat
 │   └── tag_reference/           Tag Reference + генератор tags-*.cfg
 ├── 📁 tools/                    Бинарии сборки + скрипты проверок (sync/verify/check/run_one)
-├── 📁 tests/                    Тестовые файлы (131 файлов, 1124 тестов)
+├── 📁 tests/                    Тестовые файлы (132 файлов, 1150 тестов)
 └── 📁 Build/                    Собранные самодостаточные исполняемые файлы (build.bat)
     ├── RA2MT/                   RA2MT.exe + settings.cfg + свой набор .enc + DLL и помощники
     ├── RA2YRMT/                 RA2YRMT.exe + settings.cfg + свой набор .enc + DLL и помощники
@@ -164,10 +159,7 @@ Game directory: <project dir>
   sound: soundmo.enc (ok)
   theme: thememo.enc (ok)
   eva: evamo.enc (ok)
-CryptoVisionLib_xp.dll hash verification passed.
 CryptoVisionLib_xp.dll loaded (ffidl).
-Crypto key test passed.
-V2 salt: <64-hex salt>
 Loading game rules...
 >> rulesmo.enc (decrypted)
 >> aimo.enc (decrypted)
@@ -258,7 +250,6 @@ build.bat mo       # только MOMT
 │  <map_file>        │  Путь к файлу .map/.yrm/.mpr для валидации  │
 │  --batch           │  Пакетный режим — валидация нескольких карт │
 │  --mode <name>     │  Переключение режима: ra2/yr/ares/phobos    │
-│  --salt <hex>      │  Соль для V2 дешифровки (64 hex символа)    │
 │  --cfg <path>      │  Пользовательский путь к settings.cfg       │
 │  --no-log-open     │  Не открывать лог автоматически             │
 │  --timing          │  Показать время обработки по фазам          │
@@ -272,9 +263,9 @@ build.bat mo       # только MOMT
 
 ## Конфигурация (settings.cfg)
 
-В проекте три конфигурации. Они одинаковы по `crypto_dll_expected_hash` и
-`v2_salt` и отличаются только файлами правил и режимом игры; при сборке каждый
-вариант получает свою копию как `settings.cfg` рядом со своим exe:
+В проекте три конфигурации. Они отличаются файлами правил и режимом игры;
+при сборке каждый вариант получает свою копию как `settings.cfg` рядом со
+своим exe:
 
 | Файл | Вариант | Файлы правил | gamemode |
 |---|---|---|---|
@@ -307,40 +298,22 @@ return [dict create \
     sound_warn_unused 1 \
     sound_warn_duplicate_resources 0 \
     sound_warn_orphan_resources 1 \
-    crypto_dll_expected_hash "e70ba6e736d5a40e6be26ab88b58eeac010d445ad09082aa930c60635773487f" \
-    v2_salt "<64-hex salt>" \
 ]
 ```
 
-### V1 конфигурация (legacy)
+### Защищённые ресурсы
 
-Для V1 шифрования оставьте `v2_salt` пустым и используйте незашифрованные `.enc` файлы:
+Наборы правил и аудио-индексы поставляются в виде `.enc`. Тестер расшифровывает
+их в памяти во время работы: открытый текст на диск не пишется, а сами файлы
+пригодны только вместе со сборкой, для которой были созданы.
 
-```tcl
-return [dict create \
-    ra2dir "./" \
-    ra2rul "rulesmo.enc" \
-    ra2ai  "aimo.enc" \
-    ra2art "artmo.enc" \
-    ra2snd "soundmo.enc" \
-    ra2tm  "thememo.enc" \
-    ra2eva "evamo.enc" \
-    gamemode "ares" \
-    savelog 0 \
-    writeanims 1 \
-    showunused 1 \
-    paranoid 1 \
-    auto_open_log 1 \
-    ini_encoding "" \
-    sound_validation 1 \
-    sound_check_audio 1 \
-    sound_warn_unused 1 \
-    sound_warn_duplicate_resources 0 \
-    sound_warn_orphan_resources 1 \
-    crypto_dll_expected_hash "e70ba6e736d5a40e6be26ab88b58eeac010d445ad09082aa930c60635773487f" \
-    v2_salt "" \
-]
-```
+Папку сборки нужно сохранять целиком. Копирование одного exe или смешивание
+файлов двух вариантов приводят к ошибке ключа или целостности; восстановите
+папку в исходном виде либо запросите у автора сборки свежую копию.
+
+Смена ключевого материала и перешифровка упакованных ресурсов — задача
+сопровождающего (maintainer), вне пользовательского сценария; в этом README
+она не описывается.
 
 ### Справочник ключевых настроек
 
@@ -348,8 +321,6 @@ return [dict create \
 ┌────────────────────────────────┬─────────────────────────────────────┐
 │  НАСТРОЙКА                     │  ОПИСАНИЕ                           │
 ├────────────────────────────────┼─────────────────────────────────────┤
-│  crypto_dll_expected_hash      │  SHA-256 хеш CryptoVisionLib_xp.dll │
-│  v2_salt                       │  Соль для V2 дешифровки (64 hex)    │
 │  gamemode                      │  ra2 / yr / ares / phobos           │
 │  sound_validation              │  Включить валидацию звуковых        │
 │                                │  ресурсов                           │
@@ -369,205 +340,6 @@ return [dict create \
 │  sound_warn_orphan_resources   │  Предупреждать об осиротевших       │
 │                                │  ресурсах                           │
 └────────────────────────────────┴─────────────────────────────────────┘
-```
-
-## Шифрование
-
-INI2MAP Tester использует **V2 мультифакторное шифрование** (по умолчанию) или **V1 legacy шифрование**.
-
-### V2 Мультифакторное (текущее)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  V2 ВЫВОД КЛЮЧА                                                 │
-│                                                                 │
-│  ┌──────────────┐                                               │
-│  │  Файл DLL    │──SHA-256──▶ [32B dll_hash]                    │
-│  └──────────────┘                                               │
-│         │                                                       │
-│         ▼                                                       │
-│  ┌──────────────┐                                               │
-│  │  Соль        │──(32B случайная)──▶ [32B salt]                │
-│  └──────────────┘                                               │
-│         │                                                       │
-│         ▼                                                       │
-│  ┌──────────────────────────────────────────┐                   │
-│  │  HKDF-SHA256                             │                   │
-│  │  IKM = dll_hash                          │                   │
-│  │  salt = salt                             │                   │
-│  │  info = "CryptoVisionLib-v2-master-key"  │                   │
-│  └──────────────────────────────────────────┘                   │
-│         │                                                       │
-│         ▼                                                       │
-│  [32B master_key]                                               │
-│         │                                                       │
-│         ▼                                                       │
-│  ┌──────────────────────────────────────────┐                   │
-│  │  Упаковка случайного файла-ключа         │                   │
-│  │  random_key → XSalsa20+Poly1305 → wrapped│                   │
-│  └──────────────────────────────────────────┘                   │
-│         │                                                       │
-│         ▼                                                       │
-│  ┌──────────────────────────────────────────┐                   │
-│  │  Формат зашифрованного файла:            │                   │
-│  │  [CV02 magic 4B]                         │                   │
-│  │  [wrapped_key 72B] (nonce24 + enc_key48) │                   │
-│  │  [nonce 24B]                             │                   │
-│  │  [ciphertext + MAC 16B]                  │                   │
-│  └──────────────────────────────────────────┘                   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-Три.required factorа:
-1. **Хеш DLL** — SHA-256 CryptoVisionLib_xp.dll
-2. **Соль** — случайное 32-байтное значение, передаётся отдельно
-3. **Зашифрованный файл** — содержит упакованный случайный файл-ключ
-
-### V1 Legacy
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  V1 ВЫВОД КЛЮЧА                                                 │
-│                                                                 │
-│  ┌──────────────────────────────────────────┐                   │
-│  │  DEFAULT_KEY[32] (вшит в DLL)            │                   │
-│  └──────────────────────────────────────────┘                   │
-│         │                                                       │
-│         ▼                                                       │
-│  ┌──────────────────────────────────────────┐                   │
-│  │  XSalsa20 + Poly1305 (NaCl secretbox)   │                    │
-│  └──────────────────────────────────────────┘                   │
-│         │                                                       │
-│         ▼                                                       │
-│  ┌──────────────────────────────────────────┐                   │
-│  │  Формат зашифрованного файла:            │                   │
-│  │  [nonce 24B]                             │                   │
-│  │  [ciphertext + MAC 16B]                  │                   │
-│  └──────────────────────────────────────────┘                   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-Один factor: DEFAULT_KEY, вшитый в DLL.
-
-Автоопределение по наличию magic bytes "CV02".
-
-## Перешифровка файлов
-
-Если вам нужно изменить ключ шифрования или перешифровать файлы, используйте `PatchDll.exe` и `crypto_utils.tcl`.
-
-### Шаг 1: Генерация нового ключа (опционально)
-
-PatchDll генерирует новый случайный DEFAULT_KEY в DLL:
-
-```bash
-PatchDll.exe CryptoVisionLib_xp.dll
-```
-
-**Вывод:**
-
-```
-Generated new random key: ec3fa41ed8762c7733845e2a957a6b2dd995a0d6f23751dafc947755db09e557
-Successfully patched DEFAULT_KEY in CryptoVisionLib_xp.dll
-New SHA-256 hash: e70ba6e736d5a40e6be26ab88b58eeac010d445ad09082aa930c60635773487f
-Updated settings.cfg with the new hash.
-```
-
-### Шаг 2: Генерация V2 соли (опционально)
-
-```bash
-PatchDll.exe --v2 CryptoVisionLib_xp.dll
-```
-
-**Вывод:**
-
-```
-DLL SHA-256: e70ba6e736d5a40e6be26ab88b58eeac010d445ad09082aa930c60635773487f
-Generated salt: <64-hex salt>
-
-To encrypt files with this salt:
-  tclsh crypto_utils.tcl --salt <64-hex salt> <files...>
-
-To use in INI2MAP Tester:
-  tclsh main.tcl --salt <64-hex salt> <map_file>
-
-IMPORTANT: Keep this salt secret! Share it only with trusted users.
-```
-
-### Шаг 3: Обновление settings.cfg
-
-Обновите `crypto_dll_expected_hash` и `v2_salt` в settings.cfg значениями из шагов 1-2.
-
-### Шаг 4: Шифрование .ini файлов
-
-**Пакетный режим (рекомендуется)** — шифрует всё содержимое `original_files/`
-и его подпапок (18 `.ini` + 6 `.idx`, 24 файла) и записывает `.enc` в корневую директорию проекта:
-
-```bash
-tclsh86.exe crypto_utils.tcl --encrypt-originals --dry-run   # предпросмотр: что будет записано
-tclsh86.exe crypto_utils.tcl --encrypt-originals             # записать .enc в корень проекта
-tclsh86.exe crypto_utils.tcl --encrypt-originals --out temp\enc   # записать в относительный подкаталог
-```
-
-Соль берётся из `settings.cfg` (`v2_salt`); переопределяется флагом `--salt <hex>`.
-Сначала проверяется хеш `CryptoVisionLib_xp.dll` (`crypto_dll_expected_hash`),
-`--force` отключает эту проверку. Код выхода `0` — только если все файлы
-зашифрованы успешно.
-
-**Ручной режим** — по одному файлу:
-
-```bash
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/rulesmo.ini"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/aimo.ini"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/artmo.ini"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/soundmo.ini"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/thememo.ini"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/evamo.ini"
-```
-
-Каждая команда записывает `<base>_enc<ext>` рядом с входным файлом (`original_files/Mental Omega/rulesmo.ini` -> `original_files/Mental Omega/rulesmo_enc.ini`); `<base>.enc` в корень проекта записывает только `--encrypt-originals`.
-
-### Шаг 5: Шифрование .idx файлов
-
-Аудио-индексы также необходимо зашифровать:
-
-```bash
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/audio_ra2.idx"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/audio_yr.idx"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/audio.idx"
-```
-
-### Шаг 6: Копирование DLL
-
-Скопируйте пропатченную `CryptoVisionLib_xp.dll` в корень проекта (команду выполняйте оттуда):
-
-```bash
-copy /Y CryptoVisionLib_xp.dll .
-```
-
-## Дешифровка файлов
-
-Для дешифровки V2 .enc файла обратно в открытый текст:
-
-```bash
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> rulesmo.enc
-```
-
-**Вывод:**
-
-```
-CryptoVisionLib version: 2.0.0
-Key is valid
-DLL SHA-256: e70ba6e736d5a40e6be26ab88b58eeac010d445ad09082aa930c60635773487f
-Encrypting (v2): rulesmo.enc -> rulesmo_dec.ini
-  OK
-```
-
-Создаёт `rulesmo_dec.ini` в текущей директории.
-
-Для дешифровки V1 .enc файла:
-
-```bash
-tclsh86.exe crypto_utils.tcl rulesmo.enc
 ```
 
 ## Добавление новых карт
@@ -623,20 +395,20 @@ json_report.exe all01.map.log    # -> all01.map.html
 ┌─────────────────────────────────────────────────────────────────┐
 │  ФАТАЛЬНАЯ ОШИБКА: CryptoVisionLib_xp.dll hash mismatch!        │
 ├─────────────────────────────────────────────────────────────────┤
-│  DLL была изменена или заменена.                                │
-│  Исправление: Обновите crypto_dll_expected_hash в settings.cfg  │
-│                                                                 │
-│  $ PatchDll.exe CryptoVisionLib_xp.dll                          │
+│  Runtime-файлы этой сборки изменены, заменены или смешаны с     │
+│  другим вариантом.                                              │
+│  Исправление: восстановите папку сборки в исходном виде         │
+│  (exe, settings.cfg, набор .enc и DLL вместе).                  │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│  ФАТАЛЬНАЯ ОШИБКА: V2 encrypted file detected but no salt       │
-│  provided (pass --salt or provide settings.cfg): <file>         │
+│  ФАТАЛЬНАЯ ОШИБКА: V2 file but no salt provided: <file>         │
 ├─────────────────────────────────────────────────────────────────┤
-│  Исправление: Установите v2_salt в settings.cfg или передайте   │
-│  --salt <hex> в командной строке                                │
-│                                                                 │
-│  $ tclsh86.exe main.tcl --salt <64-hex salt> your_map.map       │
+│  Сборка запущена без своего ключевого материала: exe скопирован │
+│  отдельно от папки, либо файлы принадлежат другой сборке или    │
+│  другому пользователю Windows.                                  │
+│  Исправление: запускайте тестер из полной папки сборки либо     │
+│  запросите у автора сборки свежую копию.                        │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -655,10 +427,9 @@ json_report.exe all01.map.log    # -> all01.map.html
 ┌─────────────────────────────────────────────────────────────────┐
 │  ФАТАЛЬНАЯ ОШИБКА: Crypto key validation failed!                │
 ├─────────────────────────────────────────────────────────────────┤
-│  DEFAULT_KEY в DLL повреждена или неверна.                      │
-│  Исправление: Перепатчите DLL                                   │
-│                                                                 │
-│  $ PatchDll.exe CryptoVisionLib_xp.dll                          │
+│  Крипто-runtime не прошёл самопроверку — DLL повреждена.        │
+│  Исправление: верните CryptoVisionLib_xp.dll из исходной папки  │
+│  сборки.                                                        │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -666,7 +437,7 @@ json_report.exe all01.map.log    # -> all01.map.html
 │  Sound resource validation will be skipped.                     │
 ├─────────────────────────────────────────────────────────────────┤
 │  Проверьте что audio_ra2.enc, audio_yr.enc, audio.enc           │
-│  существуют и зашифрованы с правильной солью.                   │
+│  существуют и относятся к этой сборке.                          │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -836,11 +607,11 @@ json_report.exe all01.map.log    # -> all01.map.html
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  ТЕСТОВЫЙ НАБОР: 1124 тестов в 131 тестовых файлах              │
+│  ТЕСТОВЫЙ НАБОР: 1150 тестов в 132 тестовых файлах              │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ████████████████████████████████████████████████████ 100%      │
-│  Все тесты проходят                                             │
+│  Все тесты проходят при наличии ключевого материала             │
 │                                                                 │
 │  Основные модули:                                               │
 │  test_constants.tcl .............. 25/25  ✅                    │
@@ -862,15 +633,19 @@ json_report.exe all01.map.log    # -> all01.map.html
 │  test_report_unused.tcl ........... 14/14  ✅                   │
 │  test_report_unused_extended.tcl ... 9/9   ✅                   │
 │  test_logging.tcl ................. 15/15  ✅                   │
-│  test_cli.tcl ..................... 20/20  ✅                   │
+│  test_cli.tcl ..................... 22/22  ✅                   │
 │  test_config.tcl .................. 10/10  ✅                   │
 │  test_orchestrator.tcl ............ 10/10  ✅                   │
-│  test_crypto_utils_cli.tcl .........  6/6   ✅                  │
+│  test_crypto_utils_cli.tcl .........  7/7   ✅                  │
+│  test_salt.tcl .................... 22/22  ✅                   │
 │                                                                 │
 │  Плюс 108 отдельных файлов тестов проверок (395 доп. тестов)    │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+Крипто-тестам нужен ключевой материал этой сборки;
+без него `cu-decrypt-buffer-v2` в `test_crypto_utils_cli.tcl` падает.
 
 Запуск всего набора тестов встроенным раннером:
 

@@ -12,10 +12,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Tcl-8.6-blue?logo=tcl&logoColor=white" alt="Tcl">
   <img src="https://img.shields.io/badge/Platform-Windows-0078d4?logo=windows&logoColor=white" alt="Windows">
-  <img src="https://img.shields.io/badge/Crypto-NaCl--XSalsa20-green" alt="Crypto">
-  <img src="https://img.shields.io/badge/Encryption-V2--HKDF--SHA256-orange" alt="Encryption">
   <img src="https://img.shields.io/badge/Maps-124%2B%20checks-brightgreen" alt="Checks">
-  <img src="https://img.shields.io/badge/Tests-1124%2F1124%20passing-success" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-1150%20tests-blue" alt="Tests">
   <img src="https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-blue" alt="License">
 </p>
 
@@ -31,10 +29,10 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  🔐 加密                                                        │
-│  ├── V2 多因子：DLL 哈希 + 盐值 + HKDF-SHA256                   │
-│  ├── V1 传统：DEFAULT_KEY（XSalsa20 + Poly1305）                │
-│  └── 通过 "CV02" 魔数字节自动检测                               │
+│  🔒 受保护资源                                                  │
+│  ├── 规则与音频索引以加密形式（.enc）分发                       │
+│  ├── 仅在内存中解密，绝不写入磁盘                               │
+│  └── 解密前先校验运行时文件                                     │
 ├─────────────────────────────────────────────────────────────────┤
 │  📁 文件支持                                                    │
 │  ├── 地图：.map、.yrm、.mpr                                     │
@@ -70,9 +68,6 @@
 │                                                                 │
 │  ✓ CryptoVisionLib_xp.dll（兼容 XP，静态链接）                  │
 │    └── 位于 third_party/CryptoVisionLib/                        │
-│                                                                 │
-│  ○ PatchDll.exe（可选）                                         │
-│    └── 仅在重新生成加密密钥时需要                               │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -83,14 +78,14 @@
 │
 ├── 📄 main.tcl                  入口点
 ├── 📄 __mission.bat             交互式启动器
-├── 📄 settings.cfg              配置 MOMT（哈希、盐值、游戏模式）
-├── 📄 settings-ra2.cfg          配置 RA2MT（相同哈希/盐值，RA2 文件）
-├── 📄 settings-yr.cfg           配置 RA2YRMT（相同哈希/盐值，YR 文件）
+├── 📄 settings.cfg              配置 MOMT（规则集、游戏模式）
+├── 📄 settings-ra2.cfg          配置 RA2MT（RA2 文件，模式 ra2）
+├── 📄 settings-yr.cfg           配置 RA2YRMT（YR 文件，模式 yr）
 ├── 🎨 MOMT.ico                  应用图标（MOMT 构建）
 ├── 🎨 RA2MT.ico                 应用图标（RA2MT 构建）
 ├── 🎨 RA2YRMT.ico               应用图标（RA2YRMT 构建）
 │
-├── 📁 original_files/           用于重新加密的原始明文文件
+├── 📁 original_files/           构建用原始文件（仅维护者）
 │   ├── Mental Omega/            9 个文件：rulesmo、aimo、artmo、soundmo、thememo、evamo、audio*
 │   ├── Red Alert 2/             7 个文件：rules、ai、art、sound、theme、eva、audio_ra2
 │   └── Red Alert 2 Yuris Revenge/  8 个文件：rulesmd、aimd、artmd、soundmd、thememd、evamd、audio*
@@ -100,8 +95,8 @@
 ├── 🔒 rulesmd.enc               RA2YRMT 规则集（rulesmd、aimd、artmd、soundmd、thememd、evamd）
 ├── 🔒 audio_ra2.enc             音频索引（audio_ra2、audio_yr、audio - 所有变体共用）
 │
-├── 📄 crypto.tcl                加密模块（ffidl + DLL 集成）
-├── 📄 crypto_utils.tcl          独立加解密工具
+├── 📄 crypto.tcl                加密模块
+├── 📄 crypto_utils.tcl          加密工具（仅维护者）
 ├── 📄 cli.tcl                   命令行参数解析器
 ├── 📄 config.tcl                配置加载器
 ├── 📄 constants.tcl             游戏常量
@@ -110,7 +105,7 @@
 ├── 📄 orchestrator.tcl          主校验编排器
 ├── 📄 cache.tcl                 批处理模式的规则/音频缓存
 ├── 📄 utils.tcl                 共享工具过程
-├── 📄 audio_parser.tcl          音频索引解析器（在内存中解密 .enc）
+├── 📄 audio_parser.tcl          音频索引解析器
 ├── 📄 rules_parser.tcl          规则 INI 解析器
 ├── 📁 rules_parser/             规则解析器子模块（8 个文件）
 ├── 📄 map_parser.tcl            地图文件解析器
@@ -128,10 +123,10 @@
 │   ├── CryptoVisionLib/         加密 DLL 源码 + build_xp.bat
 │   ├── ffidl/                   ffidl 源码 + build_xp.bat
 │   ├── json_report/             JSON 日志 -> HTML 报告源码 + build_xp.bat
-│   ├── patch_key/               PatchDll 源码 + build_xp.bat
+│   ├── patch_key/               维护者工具源码 + build_xp.bat
 │   └── tag_reference/           Tag Reference 工作簿 + generate_tags.ps1
 ├── 📁 tools/                    构建二进制与校验脚本（sync/verify/check/run_one）
-├── 📁 tests/                    测试文件（131 个文件，1124 个测试）
+├── 📁 tests/                    测试文件（132 个文件，1150 个测试）
 └── 📁 Build/                    构建出的自包含可执行文件（build.bat）
     ├── RA2MT/                   RA2MT.exe + settings.cfg + 自己的 .enc 集 + DLL 与辅助文件
     ├── RA2YRMT/                 RA2YRMT.exe + settings.cfg + 自己的 .enc 集 + DLL 与辅助文件
@@ -164,10 +159,7 @@ Game directory: <project dir>
   sound: soundmo.enc (ok)
   theme: thememo.enc (ok)
   eva: evamo.enc (ok)
-CryptoVisionLib_xp.dll hash verification passed.
 CryptoVisionLib_xp.dll loaded (ffidl).
-Crypto key test passed.
-V2 salt: <64-hex salt>
 Loading game rules...
 >> rulesmo.enc (decrypted)
 >> aimo.enc (decrypted)
@@ -256,7 +248,6 @@ build.bat mo       # 仅 MOMT
 │  <map_file>        │  要校验的 .map/.yrm/.mpr 文件路径           │
 │  --batch           │  批处理模式 —— 校验多张地图                 │
 │  --mode <name>     │  覆盖游戏模式：ra2/yr/ares/phobos           │
-│  --salt <hex>      │  V2 解密盐值（64 个十六进制字符）           │
 │  --cfg <path>      │  自定义 settings.cfg 路径                   │
 │  --no-log-open     │  校验后不自动打开日志文件                   │
 │  --timing          │  显示各阶段处理耗时                         │
@@ -270,9 +261,8 @@ build.bat mo       # 仅 MOMT
 
 ## 配置（settings.cfg）
 
-项目附带三个配置。它们的 `crypto_dll_expected_hash` 和 `v2_salt` 相同，
-只在规则文件和游戏模式上不同；构建时每个变体都会得到自己的副本，
-作为 `settings.cfg` 放在其 exe 旁：
+项目附带三个配置。它们只在规则文件和游戏模式上不同；构建时每个变体都会
+得到自己的副本，作为 `settings.cfg` 放在其 exe 旁：
 
 | 文件 | 变体 | 规则文件 | gamemode |
 |---|---|---|---|
@@ -305,40 +295,19 @@ return [dict create \
     sound_warn_unused 1 \
     sound_warn_duplicate_resources 0 \
     sound_warn_orphan_resources 1 \
-    crypto_dll_expected_hash "e70ba6e736d5a40e6be26ab88b58eeac010d445ad09082aa930c60635773487f" \
-    v2_salt "<64-hex salt>" \
 ]
 ```
 
-### V1 配置（传统）
+### 受保护资源
 
-对于 V1 加密，请将 `v2_salt` 留空，并使用未加密的 `.enc` 文件：
+规则集与音频索引以 `.enc` 形式分发。测试器运行时在内存中解密：明文不会写入磁盘，
+这些文件也只有在与其配套的构建中才可用。
 
-```tcl
-return [dict create \
-    ra2dir "./" \
-    ra2rul "rulesmo.enc" \
-    ra2ai  "aimo.enc" \
-    ra2art "artmo.enc" \
-    ra2snd "soundmo.enc" \
-    ra2tm  "thememo.enc" \
-    ra2eva "evamo.enc" \
-    gamemode "ares" \
-    savelog 0 \
-    writeanims 1 \
-    showunused 1 \
-    paranoid 1 \
-    auto_open_log 1 \
-    ini_encoding "" \
-    sound_validation 1 \
-    sound_check_audio 1 \
-    sound_warn_unused 1 \
-    sound_warn_duplicate_resources 0 \
-    sound_warn_orphan_resources 1 \
-    crypto_dll_expected_hash "e70ba6e736d5a40e6be26ab88b58eeac010d445ad09082aa930c60635773487f" \
-    v2_salt "" \
-]
-```
+构建文件夹必须保持完整。只复制 exe，或混用两个变体的文件，都会导致密钥或完整性
+错误；请恢复原始文件夹，或向构建作者索取新的副本。
+
+轮换密钥材料并重新加密打包资源属于维护者任务，不在用户流程之内，本 README
+不做说明。
 
 ### 关键设置参考
 
@@ -346,8 +315,6 @@ return [dict create \
 ┌────────────────────────────────┬─────────────────────────────────────┐
 │  设置                          │  说明                               │
 ├────────────────────────────────┼─────────────────────────────────────┤
-│  crypto_dll_expected_hash      │  CryptoVisionLib_xp.dll 的 SHA-256  │
-│  v2_salt                       │  V2 解密盐值（64 位十六进制）       │
 │  gamemode                      │  ra2 / yr / ares / phobos           │
 │  sound_validation              │  启用音频资源校验                   │
 │  ini_encoding                  │  覆盖 INI 编码（或自动）            │
@@ -361,204 +328,6 @@ return [dict create \
 │  sound_warn_duplicate_resources│  对重复资源告警                     │
 │  sound_warn_orphan_resources   │  对孤立资源告警                     │
 └────────────────────────────────┴─────────────────────────────────────┘
-```
-
-## 加密
-
-INI2MAP Tester 使用 **V2 多因子加密**（默认）或 **V1 传统加密**。
-
-### V2 多因子（当前）
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  V2 密钥派生                                                    │
-│                                                                 │
-│  ┌──────────────┐                                               │
-│  │  DLL 文件    │──SHA-256──▶ [32B dll_hash]                    │
-│  └──────────────┘                                               │
-│         │                                                       │
-│         ▼                                                       │
-│  ┌──────────────┐                                               │
-│  │  盐值        │──(32B random)──▶ [32B salt]                   │
-│  └──────────────┘                                               │
-│         │                                                       │
-│         ▼                                                       │
-│  ┌──────────────────────────────────────────┐                   │
-│  │  HKDF-SHA256                             │                   │
-│  │  IKM = dll_hash                          │                   │
-│  │  salt = salt                             │                   │
-│  │  info = "CryptoVisionLib-v2-master-key"  │                   │
-│  └──────────────────────────────────────────┘                   │
-│         │                                                       │
-│         ▼                                                       │
-│  [32B master_key]                                               │
-│         │                                                       │
-│         ▼                                                       │
-│  ┌──────────────────────────────────────────┐                   │
-│  │  包装随机文件密钥                        │                   │
-│  │  random_key → XSalsa20+Poly1305 → wrapped│                   │
-│  └──────────────────────────────────────────┘                   │
-│         │                                                       │
-│         ▼                                                       │
-│  ┌──────────────────────────────────────────┐                   │
-│  │  加密文件格式：                          │                   │
-│  │  [CV02 magic 4B]                         │                   │
-│  │  [wrapped_key 72B] (nonce24 + enc_key48) │                   │
-│  │  [nonce 24B]                             │                   │
-│  │  [ciphertext + MAC 16B]                  │                   │
-│  └──────────────────────────────────────────┘                   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-需要三个因子：
-1. **DLL 哈希** — CryptoVisionLib_xp.dll 的 SHA-256
-2. **盐值** — 随机 32 字节值，另行共享
-3. **加密文件** — 包含被包装的随机文件密钥
-
-### V1 传统
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  V1 密钥派生                                                    │
-│                                                                 │
-│  ┌──────────────────────────────────────────┐                   │
-│  │  DEFAULT_KEY[32]（硬编码于 DLL）         │                   │
-│  └──────────────────────────────────────────┘                   │
-│         │                                                       │
-│         ▼                                                       │
-│  ┌──────────────────────────────────────────┐                   │
-│  │  XSalsa20 + Poly1305 (NaCl secretbox)   │                    │
-│  └──────────────────────────────────────────┘                   │
-│         │                                                       │
-│         ▼                                                       │
-│  ┌──────────────────────────────────────────┐                   │
-│  │  加密文件格式：                          │                   │
-│  │  [nonce 24B]                             │                   │
-│  │  [ciphertext + MAC 16B]                  │                   │
-│  └──────────────────────────────────────────┘                   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-单一因子：内嵌于 DLL 中的 DEFAULT_KEY。
-
-通过 "CV02" 魔数字节自动检测。
-
-## 重新加密文件
-
-如需更换加密密钥或重新加密文件，请使用 `PatchDll.exe` 和 `crypto_utils.tcl`。
-
-### 步骤 1：生成新密钥（可选）
-
-PatchDll 在 DLL 中生成新的随机 DEFAULT_KEY：
-
-```bash
-PatchDll.exe CryptoVisionLib_xp.dll
-```
-
-**输出：**
-
-```
-Generated new random key: ec3fa41ed8762c7733845e2a957a6b2dd995a0d6f23751dafc947755db09e557
-Successfully patched DEFAULT_KEY in CryptoVisionLib_xp.dll
-New SHA-256 hash: e70ba6e736d5a40e6be26ab88b58eeac010d445ad09082aa930c60635773487f
-Updated settings.cfg with the new hash.
-```
-
-### 步骤 2：生成 V2 盐值（可选）
-
-```bash
-PatchDll.exe --v2 CryptoVisionLib_xp.dll
-```
-
-**输出：**
-
-```
-DLL SHA-256: e70ba6e736d5a40e6be26ab88b58eeac010d445ad09082aa930c60635773487f
-Generated salt: <64-hex salt>
-
-To encrypt files with this salt:
-  tclsh crypto_utils.tcl --salt <64-hex salt> <files...>
-
-To use in INI2MAP Tester:
-  tclsh main.tcl --salt <64-hex salt> <map_file>
-
-IMPORTANT: Keep this salt secret! Share it only with trusted users.
-```
-
-### 步骤 3：更新 settings.cfg
-
-用步骤 1-2 得到的值更新 settings.cfg 中的 `crypto_dll_expected_hash` 和 `v2_salt`。
-
-### 步骤 4：加密 .ini 文件
-
-**批处理模式（推荐）** — 加密 `original_files/` 及其子文件夹中的全部文件
-（18 个 `.ini` + 6 个 `.idx`，共 24 个文件），并把 `.enc` 写入项目根目录：
-
-```bash
-tclsh86.exe crypto_utils.tcl --encrypt-originals --dry-run   # preview: what would be written
-tclsh86.exe crypto_utils.tcl --encrypt-originals             # write .enc to the project root
-tclsh86.exe crypto_utils.tcl --encrypt-originals --out temp\enc   # write to a relative subfolder
-```
-
-盐值从 `settings.cfg`（`v2_salt`）读取；可用 `--salt <hex>` 覆盖。
-`CryptoVisionLib_xp.dll` 会先按 `crypto_dll_expected_hash` 校验
-（`--force` 可跳过该检查）。只有当全部文件都成功时，命令才以 `0` 退出。
-
-**手动模式** — 逐个加密文件：
-
-```bash
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/rulesmo.ini"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/aimo.ini"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/artmo.ini"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/soundmo.ini"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/thememo.ini"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/evamo.ini"
-```
-
-每条命令都会在输入文件旁生成 `<base>_enc<ext>`（如 `original_files/Mental Omega/rulesmo.ini` -> `original_files/Mental Omega/rulesmo_enc.ini`）；只有 `--encrypt-originals` 才会把 `<base>.enc` 写入项目根目录。
-
-### 步骤 5：加密 .idx 文件
-
-音频索引文件同样必须加密：
-
-```bash
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/audio_ra2.idx"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/audio_yr.idx"
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> "original_files/Mental Omega/audio.idx"
-```
-
-### 步骤 6：复制 DLL
-
-把打好补丁的 `CryptoVisionLib_xp.dll` 复制到项目根目录（请在根目录执行该命令）：
-
-```bash
-copy /Y CryptoVisionLib_xp.dll .
-```
-
-## 解密文件
-
-将 V2 的 .enc 文件解密回明文：
-
-```bash
-tclsh86.exe crypto_utils.tcl --salt <salt_hex> rulesmo.enc
-```
-
-**输出：**
-
-```
-CryptoVisionLib version: 2.0.0
-Key is valid
-DLL SHA-256: e70ba6e736d5a40e6be26ab88b58eeac010d445ad09082aa930c60635773487f
-Encrypting (v2): rulesmo.enc -> rulesmo_dec.ini
-  OK
-```
-
-在当前目录生成 `rulesmo_dec.ini`。
-
-解密 V1 的 .enc 文件：
-
-```bash
-tclsh86.exe crypto_utils.tcl rulesmo.enc
 ```
 
 ## 添加新地图
@@ -612,19 +381,17 @@ json_report.exe all01.map.log    # -> all01.map.html
 ┌─────────────────────────────────────────────────────────────────┐
 │  致命错误: CryptoVisionLib_xp.dll hash mismatch!                │
 ├─────────────────────────────────────────────────────────────────┤
-│  The DLL has been modified or replaced.                         │
-│  修复: Update crypto_dll_expected_hash in settings.cfg          │
-│                                                                 │
-│  $ PatchDll.exe CryptoVisionLib_xp.dll                          │
+│  本次构建的运行时文件被修改、替换，或与其他变体混用。           │
+│  修复: 恢复原始构建文件夹：exe、settings.cfg、.enc 集           │
+│  与 DLL 需配套。                                                │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│  致命错误: V2 encrypted file detected but no salt provided      │
-│  (pass --salt or provide settings.cfg): <file>                  │
+│  致命错误: V2 file but no salt provided: <file>                 │
 ├─────────────────────────────────────────────────────────────────┤
-│  修复: Set v2_salt in settings.cfg or pass --salt <hex>         │
-│                                                                 │
-│  $ tclsh86.exe main.tcl --salt <64-hex salt> your_map.map       │
+│  启动时缺少构建所需的密钥材料：exe 被单独复制出文件夹，         │
+│  或文件属于其他构建／其他 Windows 用户。                        │
+│  修复: 从完整的构建文件夹运行测试器，或向构建作者索取新副本。   │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -643,10 +410,8 @@ json_report.exe all01.map.log    # -> all01.map.html
 ┌─────────────────────────────────────────────────────────────────┐
 │  致命错误: Crypto key validation failed!                        │
 ├─────────────────────────────────────────────────────────────────┤
-│  The DEFAULT_KEY in the DLL is corrupted or wrong.              │
-│  修复: Re-patch the DLL                                         │
-│                                                                 │
-│  $ PatchDll.exe CryptoVisionLib_xp.dll                          │
+│  加密运行时未通过自检 —— DLL 不正确或已损坏。                   │
+│  修复: 从原始构建文件夹恢复 CryptoVisionLib_xp.dll。            │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -654,7 +419,7 @@ json_report.exe all01.map.log    # -> all01.map.html
 │  Sound resource validation will be skipped.                     │
 ├─────────────────────────────────────────────────────────────────┤
 │  Check that audio_ra2.enc, audio_yr.enc, audio.enc exist        │
-│  and are encrypted with the correct salt.                       │
+│  and belong to this build.                                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -819,11 +584,11 @@ json_report.exe all01.map.log    # -> all01.map.html
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  测试套件：131 个测试文件，共 1124 项测试                       │
+│  测试套件：132 个测试文件，共 1150 项测试                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ████████████████████████████████████████████████████ 100%      │
-│  全部测试通过                                                   │
+│  提供密钥材料后全部测试通过                                     │
 │                                                                 │
 │  核心模块：                                                     │
 │  test_constants.tcl .............. 25/25  ✅                    │
@@ -845,15 +610,19 @@ json_report.exe all01.map.log    # -> all01.map.html
 │  test_report_unused.tcl ........... 14/14  ✅                   │
 │  test_report_unused_extended.tcl ... 9/9   ✅                   │
 │  test_logging.tcl ................. 15/15  ✅                   │
-│  test_cli.tcl ..................... 20/20  ✅                   │
+│  test_cli.tcl ..................... 22/22  ✅                   │
 │  test_config.tcl .................. 10/10  ✅                   │
 │  test_orchestrator.tcl ............ 10/10  ✅                   │
-│  test_crypto_utils_cli.tcl .........  6/6   ✅                  │
+│  test_crypto_utils_cli.tcl .........  7/7   ✅                  │
+│  test_salt.tcl .................... 22/22  ✅                   │
 │                                                                 │
 │  另有 108 个独立检查测试文件（395 项额外测试）                  │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+加密测试需要本次构建的密钥材料；
+没有它 `test_crypto_utils_cli.tcl` 中的 `cu-decrypt-buffer-v2` 会失败。
 
 使用自带的运行器运行整个测试套件：
 
