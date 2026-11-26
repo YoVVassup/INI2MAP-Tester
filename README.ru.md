@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Tcl-8.6-blue?logo=tcl&logoColor=white" alt="Tcl">
   <img src="https://img.shields.io/badge/Platform-Windows-0078d4?logo=windows&logoColor=white" alt="Windows">
   <img src="https://img.shields.io/badge/Maps-124%2B%20checks-brightgreen" alt="Checks">
-  <img src="https://img.shields.io/badge/Tests-1150%20tests-blue" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-1153%20tests-blue" alt="Tests">
   <img src="https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-blue" alt="License">
 </p>
 
@@ -126,7 +126,7 @@
 │   ├── patch_key/               Исходник инструмента сопровождающего + build_xp.bat
 │   └── tag_reference/           Tag Reference + генератор tags-*.cfg
 ├── 📁 tools/                    Бинарии сборки + скрипты проверок (sync/verify/check/run_one)
-├── 📁 tests/                    Тестовые файлы (132 файлов, 1150 тестов)
+├── 📁 tests/                    Тестовые файлы (132 файлов, 1153 тестов)
 └── 📁 Build/                    Собранные самодостаточные исполняемые файлы (build.bat)
     ├── RA2MT/                   RA2MT.exe + settings.cfg + свой набор .enc + DLL и помощники
     ├── RA2YRMT/                 RA2YRMT.exe + settings.cfg + свой набор .enc + DLL и помощники
@@ -607,11 +607,11 @@ json_report.exe all01.map.log    # -> all01.map.html
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  ТЕСТОВЫЙ НАБОР: 1150 тестов в 132 тестовых файлах              │
+│  ТЕСТОВЫЙ НАБОР: 1153 тестов в 132 тестовых файлах              │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ████████████████████████████████████████████████████ 100%      │
-│  Все тесты проходят при наличии ключевого материала             │
+│  ████████████████████████████████████████████████████ 99.9%     │
+│  Проходят 1152 из 1153; одному нужен ключ                       │
 │                                                                 │
 │  Основные модули:                                               │
 │  test_constants.tcl .............. 25/25  ✅                    │
@@ -633,19 +633,20 @@ json_report.exe all01.map.log    # -> all01.map.html
 │  test_report_unused.tcl ........... 14/14  ✅                   │
 │  test_report_unused_extended.tcl ... 9/9   ✅                   │
 │  test_logging.tcl ................. 15/15  ✅                   │
-│  test_cli.tcl ..................... 22/22  ✅                   │
+│  test_cli.tcl ..................... 25/25  ✅                   │
 │  test_config.tcl .................. 10/10  ✅                   │
 │  test_orchestrator.tcl ............ 10/10  ✅                   │
-│  test_crypto_utils_cli.tcl .........  7/7   ✅                  │
+│  test_crypto_utils_cli.tcl .........  6/7   ❌                  │
 │  test_salt.tcl .................... 22/22  ✅                   │
 │                                                                 │
-│  Плюс 108 отдельных файлов тестов проверок (395 доп. тестов)    │
+│  Плюс 108 отдельных файлов тестов проверок (396 доп. тестов)    │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-Крипто-тестам нужен ключевой материал этой сборки;
-без него `cu-decrypt-buffer-v2` в `test_crypto_utils_cli.tcl` падает.
+С ключевым материалом этой сборки набор проходит целиком. Без него
+`cu-decrypt-buffer-v2` в `test_crypto_utils_cli.tcl` — единственный провал
+(6/7, см. таблицу выше).
 
 Запуск всего набора тестов встроенным раннером:
 

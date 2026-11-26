@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Tcl-8.6-blue?logo=tcl&logoColor=white" alt="Tcl">
   <img src="https://img.shields.io/badge/Platform-Windows-0078d4?logo=windows&logoColor=white" alt="Windows">
   <img src="https://img.shields.io/badge/Maps-124%2B%20checks-brightgreen" alt="Checks">
-  <img src="https://img.shields.io/badge/Tests-1150%20tests-blue" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-1153%20tests-blue" alt="Tests">
   <img src="https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-blue" alt="License">
 </p>
 
@@ -126,7 +126,7 @@
 │   ├── patch_key/               Maintainer tooling source + build_xp.bat
 │   └── tag_reference/           Tag Reference workbook + generate_tags.ps1
 ├── 📁 tools/                    Build binaries + verification scripts (sync/verify/check/run_one)
-├── 📁 tests/                    Test files (132 files, 1150 tests)
+├── 📁 tests/                    Test files (132 files, 1153 tests)
 └── 📁 Build/                    Built self-contained executables (build.bat)
     ├── RA2MT/                   RA2MT.exe + settings.cfg + its .enc set + DLL + helpers
     ├── RA2YRMT/                 RA2YRMT.exe + settings.cfg + its .enc set + DLL + helpers
@@ -600,11 +600,11 @@ animations; `prereq_check` (W) validates building prerequisites and TechLevels;
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  TEST SUITE: 1150 tests across 132 test files                   │
+│  TEST SUITE: 1153 tests across 132 test files                   │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ████████████████████████████████████████████████████ 100%      │
-│  All tests passing with key material provided                   │
+│  ████████████████████████████████████████████████████ 99.9%     │
+│  1152 of 1153 pass; one test needs the build's key material     │
 │                                                                 │
 │  Core modules:                                                  │
 │  test_constants.tcl .............. 25/25  ✅                    │
@@ -626,19 +626,20 @@ animations; `prereq_check` (W) validates building prerequisites and TechLevels;
 │  test_report_unused.tcl ........... 14/14  ✅                   │
 │  test_report_unused_extended.tcl ... 9/9   ✅                   │
 │  test_logging.tcl ................. 15/15  ✅                   │
-│  test_cli.tcl ..................... 22/22  ✅                   │
+│  test_cli.tcl ..................... 25/25  ✅                   │
 │  test_config.tcl .................. 10/10  ✅                   │
 │  test_orchestrator.tcl ............ 10/10  ✅                   │
-│  test_crypto_utils_cli.tcl .........  7/7   ✅                  │
+│  test_crypto_utils_cli.tcl .........  6/7   ❌                  │
 │  test_salt.tcl .................... 22/22  ✅                   │
 │                                                                 │
-│  Plus 108 individual check test files (395 additional tests)    │
+│  Plus 108 individual check test files (396 additional tests)    │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-The crypto test files need this build's key material; without it
-`cu-decrypt-buffer-v2` in `test_crypto_utils_cli.tcl` fails.
+The suite passes completely with this build's key material. Without it,
+`cu-decrypt-buffer-v2` in `test_crypto_utils_cli.tcl` is the single failure
+(6/7, shown above).
 
 Run the whole suite with the bundled runner:
 

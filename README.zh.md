@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Tcl-8.6-blue?logo=tcl&logoColor=white" alt="Tcl">
   <img src="https://img.shields.io/badge/Platform-Windows-0078d4?logo=windows&logoColor=white" alt="Windows">
   <img src="https://img.shields.io/badge/Maps-124%2B%20checks-brightgreen" alt="Checks">
-  <img src="https://img.shields.io/badge/Tests-1150%20tests-blue" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-1153%20tests-blue" alt="Tests">
   <img src="https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-blue" alt="License">
 </p>
 
@@ -126,7 +126,7 @@
 │   ├── patch_key/               维护者工具源码 + build_xp.bat
 │   └── tag_reference/           Tag Reference 工作簿 + generate_tags.ps1
 ├── 📁 tools/                    构建二进制与校验脚本（sync/verify/check/run_one）
-├── 📁 tests/                    测试文件（132 个文件，1150 个测试）
+├── 📁 tests/                    测试文件（132 个文件，1153 个测试）
 └── 📁 Build/                    构建出的自包含可执行文件（build.bat）
     ├── RA2MT/                   RA2MT.exe + settings.cfg + 自己的 .enc 集 + DLL 与辅助文件
     ├── RA2YRMT/                 RA2YRMT.exe + settings.cfg + 自己的 .enc 集 + DLL 与辅助文件
@@ -584,11 +584,11 @@ json_report.exe all01.map.log    # -> all01.map.html
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  测试套件：132 个测试文件，共 1150 项测试                       │
+│  测试套件：132 个测试文件，共 1153 项测试                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ████████████████████████████████████████████████████ 100%      │
-│  提供密钥材料后全部测试通过                                     │
+│  ████████████████████████████████████████████████████ 99.9%     │
+│  1153 项中通过 1152 项，一项需要本次构建的密钥                  │
 │                                                                 │
 │  核心模块：                                                     │
 │  test_constants.tcl .............. 25/25  ✅                    │
@@ -610,19 +610,20 @@ json_report.exe all01.map.log    # -> all01.map.html
 │  test_report_unused.tcl ........... 14/14  ✅                   │
 │  test_report_unused_extended.tcl ... 9/9   ✅                   │
 │  test_logging.tcl ................. 15/15  ✅                   │
-│  test_cli.tcl ..................... 22/22  ✅                   │
+│  test_cli.tcl ..................... 25/25  ✅                   │
 │  test_config.tcl .................. 10/10  ✅                   │
 │  test_orchestrator.tcl ............ 10/10  ✅                   │
-│  test_crypto_utils_cli.tcl .........  7/7   ✅                  │
+│  test_crypto_utils_cli.tcl .........  6/7   ❌                  │
 │  test_salt.tcl .................... 22/22  ✅                   │
 │                                                                 │
-│  另有 108 个独立检查测试文件（395 项额外测试）                  │
+│  另有 108 个独立检查测试文件（396 项额外测试）                  │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-加密测试需要本次构建的密钥材料；
-没有它 `test_crypto_utils_cli.tcl` 中的 `cu-decrypt-buffer-v2` 会失败。
+密钥材料齐全时全套测试通过。缺少时
+`test_crypto_utils_cli.tcl` 中的 `cu-decrypt-buffer-v2` 是唯一失败项
+（6/7，见上表）。
 
 使用自带的运行器运行整个测试套件：
 
