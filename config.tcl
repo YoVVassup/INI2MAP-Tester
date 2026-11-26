@@ -34,6 +34,7 @@ namespace eval ::Config {
         sound_warn_orphan_resources 1 \
         crypto_dll_expected_hash "" \
         v2_salt "" \
+        salt_scope "" \
         tclsh_path "" \
     ]
 }
@@ -116,8 +117,19 @@ proc ::Config::load {} {
     global crypto_dll_expected_hash
     set crypto_dll_expected_hash [dict get $merged crypto_dll_expected_hash]
 
-    # V2 salt (can be overridden by --salt CLI option)
-    set ::Config::v2_salt [dict get $merged v2_salt]
+    # V2 salt (can be overridden by --salt CLI option).
+    # Resolution: env INI2MAP_SALT > HKCU registry > settings.local.cfg carrier
+    # > v2_salt from settings.cfg (legacy fallback). The registry value is
+    # scoped per tester build via salt_scope ("" = auto: exe name / "default").
+    # Guard: tests source this file standalone without salt.tcl.
+    if {[llength [info procs ::Salt::set_scope]]} {
+        ::Salt::set_scope [dict get $merged salt_scope]
+    }
+    set legacy [dict get $merged v2_salt]
+    set ::Config::v2_salt $legacy
+    if {[llength [info procs ::Salt::resolve]]} {
+        set ::Config::v2_salt [::Salt::resolve [dict get $merged crypto_dll_expected_hash] $legacy]
+    }
 
     # Optional explicit tclsh location for subprocess decrypt (empty = auto-detect)
     set ::Config::tclsh_path [dict get $merged tclsh_path]

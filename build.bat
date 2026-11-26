@@ -58,7 +58,7 @@ robocopy "taglist" "INI2MAP-Tester.vfs\lib\app-ini2map-tester\taglist" "*.tcl" /
 if %ERRORLEVEL% GEQ 8 (echo ERROR: robocopy taglist failed & goto :done)
 robocopy "others" "INI2MAP-Tester.vfs\lib\app-ini2map-tester\others" /E /PURGE /njh /njs /ndl /nc /ns /np >nul
 if %ERRORLEVEL% GEQ 8 (echo ERROR: robocopy others failed & goto :done)
-robocopy "." "INI2MAP-Tester.vfs\lib\app-ini2map-tester" "main.tcl" "cli.tcl" "config.tcl" "constants.tcl" "data.tcl" "logging.tcl" "orchestrator.tcl" "validators.tcl" "checks.tcl" "map_parser.tcl" "rules_parser.tcl" "crypto.tcl" "crypto_utils.tcl" "audio_parser.tcl" "check_key.tcl" "encrypt_v2.tcl" "cache.tcl" "utils.tcl" /njh /njs /ndl /nc /ns /np >nul
+robocopy "." "INI2MAP-Tester.vfs\lib\app-ini2map-tester" "main.tcl" "cli.tcl" "config.tcl" "constants.tcl" "data.tcl" "logging.tcl" "orchestrator.tcl" "validators.tcl" "checks.tcl" "map_parser.tcl" "rules_parser.tcl" "crypto.tcl" "crypto_utils.tcl" "audio_parser.tcl" "check_key.tcl" "encrypt_v2.tcl" "cache.tcl" "utils.tcl" "salt.tcl" /njh /njs /ndl /nc /ns /np >nul
 if %ERRORLEVEL% GEQ 8 (echo ERROR: robocopy root .tcl files failed & goto :done)
 echo INI2MAP-Tester.vfs synced.
 

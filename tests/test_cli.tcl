@@ -29,6 +29,7 @@ namespace eval ::CLI {
     variable batch_mode 0
     variable batch_pattern ""
     variable salt ""
+    variable show_salt 0
     variable baseline_mode 0
     variable baseline_filter ""
 }
@@ -44,6 +45,7 @@ proc reset_cli {} {
     set ::CLI::batch_mode 0
     set ::CLI::batch_pattern ""
     set ::CLI::salt ""
+    set ::CLI::show_salt 0
     set ::CLI::baseline_mode 0
     set ::CLI::baseline_filter ""
 }
@@ -137,6 +139,24 @@ test cli-baseline "parse sets baseline_mode" -body {
     ::CLI::parse [list "--baseline"]
     set ::CLI::baseline_mode
 } -result 1
+
+# --------------------------------------------------------------------------
+# Test 10a: parse sets show_salt (works without a map file)
+# --------------------------------------------------------------------------
+test cli-show-salt "parse sets show_salt without map file" -body {
+    reset_cli
+    ::CLI::parse [list "--show-salt"]
+    list $::CLI::show_salt $::CLI::map_file
+} -result {1 {}}
+
+# --------------------------------------------------------------------------
+# Test 10b: --show-salt combined with other options still parses
+# --------------------------------------------------------------------------
+test cli-show-salt-with-salt "parse --show-salt with --salt" -body {
+    reset_cli
+    ::CLI::parse [list "--salt" "0011" "--show-salt"]
+    list $::CLI::show_salt $::CLI::salt
+} -result {1 0011}
 
 # --------------------------------------------------------------------------
 # Test 11: parse sets baseline_filter

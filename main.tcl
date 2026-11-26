@@ -101,6 +101,7 @@ source [file join $script_dir "validators.tcl"]
 source [file join $script_dir "checks.tcl"]
 source [file join $script_dir "taglist" "taglist.tcl"]
 source [file join $script_dir "aicheck" "aicheck.tcl"]
+source [file join $script_dir "salt.tcl"]
 source [file join $script_dir "config.tcl"]
 source [file join $script_dir "orchestrator.tcl"]
 
@@ -113,6 +114,13 @@ source [file join $script_dir "orchestrator.tcl"]
 # Load and validate configuration
 # --------------------------------------------------------------------------
 ::Config::load
+
+# --show-salt: report where the V2 salt comes from, then exit (no map needed)
+if {[info exists ::CLI::show_salt] && $::CLI::show_salt} {
+    ::Salt::show
+    exit 0
+}
+
 ::Config::validate
 
 # --------------------------------------------------------------------------

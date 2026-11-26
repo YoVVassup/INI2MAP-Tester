@@ -148,6 +148,10 @@ proc ::Logging::notice {msg} {
 # Supports text and JSON output formats via ::CLI::cmd_format.
 # Optional logname lets batch mode save a per-map log (e.g. "x.map.log").
 proc logwrite {{logname "mission.log"}} {
+    # Flush salt/carrier notices queued before ::Data::logproc was installed
+    if {[llength [info procs ::Salt::flush_pending]]} {
+        catch {::Salt::flush_pending}
+    }
     set logpath "[set ::Data::path]$logname"
     if {$::Data::savelog} {
         set mode "a+"

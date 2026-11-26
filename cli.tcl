@@ -28,6 +28,7 @@ proc ::CLI::parse {argv} {
     variable batch_mode 0
     variable batch_pattern ""
     variable salt ""
+    variable show_salt 0
     variable baseline_mode 0
     variable baseline_filter ""
 
@@ -100,6 +101,10 @@ proc ::CLI::parse {argv} {
                 set salt [lindex $argv $i]
                 incr i
             }
+            "--show-salt" {
+                set show_salt 1
+                incr i
+            }
             "--baseline" {
                 set baseline_mode 1
                 incr i
@@ -134,7 +139,7 @@ proc ::CLI::parse {argv} {
         }
     }
 
-    if {!$batch_mode && $map_file eq "" && !$baseline_mode} {
+    if {!$batch_mode && $map_file eq "" && !$baseline_mode && !$show_salt} {
         puts stderr "ERROR: No map file specified."
         ::CLI::show_help_short
         exit 1
@@ -217,6 +222,7 @@ proc ::CLI::show_help {} {
     puts {  --no-log-open             Do not automatically open the log file after validation}
     puts {  --quiet                   Suppress informational console output (errors still shown)}
     puts {  --salt <hex>              Salt for v2 multi-factor encryption (64+ hex chars)}
+    puts {  --show-salt               Show salt scope/source (registry/carrier/settings.cfg) and exit}
     puts {  --baseline                Generate baseline.log from INI checks (no map file needed)}
     puts {  --baseline-filter <file>  Suppress known warnings from baseline file during validation}
     puts {  --help, -h                Show this help and exit}

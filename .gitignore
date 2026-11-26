@@ -5,6 +5,7 @@ INI2MAP-Tester.vfs/
 # Original game files + Secrets
 original_files/
 *.enc
+settings.local.cfg
 README.modders.md
 decrypt_helper.tcl
 third_party/CryptoVisionLib
