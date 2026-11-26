@@ -27,9 +27,8 @@ starpack 变体 `MOMT.exe` / `RA2MT.exe` / `RA2YRMT.exe`，并在 exe 旁解析
 | RA2YRMT | `rulesmd.enc`、`aimd.enc`、`artmd.enc`、`soundmd.enc`、`thememd.enc`、`evamd.enc`、`audio_ra2.enc`、`audio_yr.enc` |
 | MOMT | `rulesmo.enc`、`aimo.enc`、`artmo.enc`、`soundmo.enc`、`thememo.enc`、`evamo.enc`、`audio.enc`、`audio_ra2.enc`、`audio_yr.enc` |
 
-所有 `.enc` 都由 `crypto_utils.tcl --encrypt-originals` 写入项目根目录
-（见 README.zh.md，重新加密文件）。只要该变体的集中缺少任何文件，
-`build.bat` 就拒绝构建该变体。
+`.enc` 集由维护者工具生成；构建前，变体集合中的每个文件都必须位于项目根目录。
+缺少任一文件时 `build.bat` 拒绝构建该变体。
 
 ## 所需工具
 
@@ -55,7 +54,7 @@ starpack 变体 `MOMT.exe` / `RA2MT.exe` / `RA2YRMT.exe`，并在 exe 旁解析
 
 | 文件 | 用途 |
 |---|---|
-| `CryptoVisionLib_xp.dll` | 加密库（NaCl/XSalsa20+Poly1305） |
+| `CryptoVisionLib_xp.dll` | 加密库（运行时库，需与 exe 同目录） |
 | `settings.cfg` | MOMT 配置（Tcl dict 格式，gamemode `ares`） |
 | `settings-ra2.cfg` | RA2MT 配置（gamemode `ra2`） |
 | `settings-yr.cfg` | RA2YRMT 配置（gamemode `yr`） |
@@ -75,7 +74,7 @@ build.bat mo       # 仅 MOMT
 
 脚本执行以下步骤：
 
-0. **同步 INI2MAP-Tester.vfs** — 将源码目录 `.tcl`（`aicheck`、`checks`、`map_parser`、`rules_parser`、`validators`、`taglist`、`others`）及根目录 `.tcl` 模块 robocopy 到 `INI2MAP-Tester.vfs\lib\app-ini2map-tester\`，使 starpack 与源码保持一致（build.bat 第 0 步）
+0. **同步 INI2MAP-Tester.vfs** — 将源码目录 `.tcl`（`aicheck`、`checks`、`map_parser`、`rules_parser`、`validators`、`taglist`、`others`）及根目录 `.tcl` 模块 robocopy 到 `INI2MAP-Tester.vfs\lib\app-ini2map-tester\`，使 starpack 与源码保持一致（build.bat 第 0 步）。vfs 每次构建都会从零重建，模块清单为白名单：`crypto_utils.tcl`、`check_key.tcl`、`encrypt_v2.tcl`、`reencrypt_all.tcl` 属于维护者工具，不会打包；若载荷或最终的 `Build\<variant>` 目录中出现 `*.ini`/`*.idx`、`tests/`、`original_files/`、`decrypt_helper.tcl`、`MAINTAINER.md` 或维护者模块，构建将中止
 1. **下载 ResourceHacker** — 若 `tools\ResourceHacker.exe` 缺失，则自动从 angusj.com 下载
 2. **复制 base.exe** — 创建 Tcl 运行时的副本（正在运行的实例无法被包装）
 3. **sdx wrap** — 将 `INI2MAP-Tester.vfs/` 打包为 starpack（一次，所有变体共享）：
@@ -96,6 +95,8 @@ build.bat mo       # 仅 MOMT
      （RA2MT 使用 `RA2MT.ico` + `tools\version_ra2.res`，RA2YRMT 使用 `RA2YRMT.ico` + `tools\version_ra2yr.res`）
    - 将运行时文件复制到 `Build\<变体>\`：`CryptoVisionLib_xp.dll`、该变体自己的配置作为 `settings.cfg`、它的 `.enc` 集、`tags-*.cfg`、`sha256.tcl`、`ffidl_xp.dll`、生成的 `pkgIndex.tcl`、`json_report.exe`
 5. **共享** — `json_report.exe` 复制到项目根目录（HTML 报告：`json_report mission.log`），`ffidl_xp.dll` 也一样（用于脚本模式）
+6. **受保护资源** — `build.bat` 为每个变体写入携带本次构建密钥材料的运行时文件，
+   并将其设为 hidden + system。若没有可用的密钥材料，构建以退出码 1 停止。
 
 ### 手动构建（分步）
 
@@ -122,6 +123,7 @@ copy tags-*.cfg Build\MOMT\
 copy others\sha256\sha256.tcl Build\MOMT\
 copy others\ffidl\ffidl_xp.dll Build\MOMT\
 copy third_party\json_report\json_report.exe json_report.exe
+# 步骤 6（受保护资源）仅限维护者：请用 build.bat 生成可运行的变体
 ```
 
 RA2MT：`settings-ra2.cfg` -> `Build\RA2MT\settings.cfg` 与 RA2 `.enc` 集；
@@ -148,10 +150,10 @@ H:\MAP\
 ├── rules_parser.tcl             # 规则 INI 解析器
 ├── map_parser.tcl               # .map 文件解析器
 ├── audio_parser.tcl             # 音频资源解析器
-├── crypto_utils.tcl             # 加密/解密工具
-├── encrypt_v2.tcl               # V2 加密
-├── check_key.tcl                # 密钥检查
-├── reencrypt_all.tcl            # 重新加密全部文件
+├── crypto_utils.tcl             # 加密工具（维护者）
+├── encrypt_v2.tcl               # V2 加密（维护者）
+├── check_key.tcl                # 密钥检查（维护者）
+├── reencrypt_all.tcl            # 重新加密工具（维护者）
 ├── taglist/taglist.tcl          # 标签校验
 ├── checks/*.tcl                 # 124+ 检查模块
 ├── validators/*.tcl             # 校验模块
@@ -163,7 +165,7 @@ H:\MAP\
 ├── third_party/                 # 源码与构建脚本
 │   ├── CryptoVisionLib/         # 加密 DLL 源码 + build_xp.bat
 │   ├── ffidl/                   # ffidl 源码 + build_xp.bat
-│   ├── patch_key/               # PatchDll 源码 + build_xp.bat
+│   ├── patch_key/               # 维护者工具源码 + build_xp.bat
 │   └── tag_reference/           # Tag Reference.xlsx、Regular_to_Excel.txt、generate_tags.ps1
 ├── CryptoVisionLib_xp.dll       # 加密 DLL
 ├── settings.cfg                 # MOMT 配置（gamemode ares）
@@ -230,3 +232,4 @@ C:\Tcl\bin\tclsh86.exe H:\MAP\main.tcl <map_file>
 - **ffidl_xp.dll** — 静态链接的 ffidl（无 libffi 依赖），兼容 Windows XP。
 - **CryptoVisionLib_xp.dll** — 静态链接的加密 DLL（ADVAPI32+KERNEL32+msvcrt），兼容 Windows XP。
 - **third_party/** — 各库的源码与构建脚本（CryptoVisionLib、ffidl、patch_key、json_report、tag_reference）。
+- **受保护资源。** 变体文件夹必须完整：exe + 各自的 `settings.cfg`、`.enc` 集与 DLL。不要重命名 exe，也不要混用不同变体的文件。

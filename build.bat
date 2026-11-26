@@ -42,8 +42,21 @@ if not exist "tools\ResourceHacker.exe" (
     )
 )
 
-rem Step 0: Sync INI2MAP-Tester.vfs with source files (one shared payload for all variants)
+rem Step 0: Build the starpack payload from a whitelist (one shared payload for
+rem all variants). The vfs is deleted first, so nothing from an earlier build can
+rem leak into the package (maintainer tools, stale modules). Only the files named
+rem below are packaged; :verify_clean fails the build if a forbidden file is found.
+set "VFS_APP=INI2MAP-Tester.vfs\lib\app-ini2map-tester"
 echo Syncing INI2MAP-Tester.vfs...
+if exist "INI2MAP-Tester.vfs" rmdir /S /Q "INI2MAP-Tester.vfs"
+mkdir "INI2MAP-Tester.vfs"
+rem Starpack bootstrap: the vfs root main.tcl loads the application from
+rem lib/app-ini2map-tester. Written on every build so the package is
+rem reproducible and the vfs can be wiped safely.
+> "INI2MAP-Tester.vfs\main.tcl" (
+    echo # INI2MAP-Tester bootstrap - source the real main.tcl from lib/app-ini2map-tester
+    echo source [file join [file dirname [info script]] lib app-ini2map-tester main.tcl]
+)
 robocopy "aicheck" "INI2MAP-Tester.vfs\lib\app-ini2map-tester\aicheck" "*.tcl" /njh /njs /ndl /nc /ns /np >nul
 if %ERRORLEVEL% GEQ 8 (echo ERROR: robocopy aicheck failed & goto :done)
 robocopy "checks" "INI2MAP-Tester.vfs\lib\app-ini2map-tester\checks" "*.tcl" /njh /njs /ndl /nc /ns /np >nul
@@ -58,9 +71,28 @@ robocopy "taglist" "INI2MAP-Tester.vfs\lib\app-ini2map-tester\taglist" "*.tcl" /
 if %ERRORLEVEL% GEQ 8 (echo ERROR: robocopy taglist failed & goto :done)
 robocopy "others" "INI2MAP-Tester.vfs\lib\app-ini2map-tester\others" /E /PURGE /njh /njs /ndl /nc /ns /np >nul
 if %ERRORLEVEL% GEQ 8 (echo ERROR: robocopy others failed & goto :done)
-robocopy "." "INI2MAP-Tester.vfs\lib\app-ini2map-tester" "main.tcl" "cli.tcl" "config.tcl" "constants.tcl" "data.tcl" "logging.tcl" "orchestrator.tcl" "validators.tcl" "checks.tcl" "map_parser.tcl" "rules_parser.tcl" "crypto.tcl" "crypto_utils.tcl" "audio_parser.tcl" "check_key.tcl" "encrypt_v2.tcl" "cache.tcl" "utils.tcl" "salt.tcl" /njh /njs /ndl /nc /ns /np >nul
+rem Root modules: runtime only. crypto_utils.tcl / check_key.tcl / encrypt_v2.tcl
+rem are maintainer tooling and stay in the source tree, never in the payload.
+set "ROOT_MODULES=main.tcl cli.tcl config.tcl constants.tcl data.tcl logging.tcl orchestrator.tcl validators.tcl checks.tcl map_parser.tcl rules_parser.tcl crypto.tcl audio_parser.tcl cache.tcl utils.tcl salt.tcl"
+robocopy "." "%VFS_APP%" %ROOT_MODULES% /njh /njs /ndl /nc /ns /np >nul
 if %ERRORLEVEL% GEQ 8 (echo ERROR: robocopy root .tcl files failed & goto :done)
+
+rem Whitelist guard: every runtime module of the explicit list must be present,
+rem and nothing forbidden may have slipped into the payload staging directory.
+if not exist "INI2MAP-Tester.vfs\main.tcl" (echo BUILD FAILED: payload is missing the starpack bootstrap main.tcl & goto :done)
+for %%f in (%ROOT_MODULES%) do (
+    if not exist "%VFS_APP%\%%f" (echo BUILD FAILED: payload is missing %%f & goto :done)
+)
+call :verify_clean "INI2MAP-Tester.vfs"
+if errorlevel 1 goto :done
 echo INI2MAP-Tester.vfs synced.
+
+rem Maintainer build only: the marker unlocks --salt / --show-salt inside the
+rem payload. It is written into the vfs, so a recipient cannot add it later.
+if defined INI2MAP_MAINTAINER (
+    echo Maintainer build - ^--salt and ^--show-salt are enabled > "%VFS_APP%\maintainer.enabled"
+    echo MAINTAINER BUILD: --salt and --show-salt are enabled in this payload.
+)
 
 rem Step 1: Locate tclkit (override with the TCLKIT env var if it lives elsewhere)
 if not defined TCLKIT set "TCLKIT=C:\Tcl\bin\base-tcl8.6-thread-win32-ix86.exe"
@@ -190,8 +222,52 @@ if errorlevel 1 (
 )
 attrib +h +s "%OUTDIR%\settings.local.cfg"
 
+rem Ship check on the finished folder: no maintainer tools, test trees, decrypted
+rem originals, working files (*.ini, *.idx) or internal notes next to the exe.
+call :verify_clean "%OUTDIR%"
+if errorlevel 1 exit /b 1
+
 echo %EXE% ready in %OUTDIR%\
 exit /b 0
+
+rem ---------------------------------------------------------------------------
+rem :verify_clean <dir>
+rem Guard for a directory that ends up in a shipped package (the vfs payload
+rem staging or a finished Build\<variant> folder): fails the build when
+rem maintainer tooling, tests, decrypted originals or working files are present.
+rem ---------------------------------------------------------------------------
+:verify_clean
+setlocal EnableDelayedExpansion
+if not exist "%~1" (
+    echo PAYLOAD CHECK FAILED: %~1 does not exist
+    exit /b 1
+)
+set "BAD="
+for /f "delims=" %%f in ('dir /b /s /a-d "%~1" 2^>nul') do (
+    for %%n in (decrypt_helper.tcl MAINTAINER.md crypto_utils.tcl check_key.tcl encrypt_v2.tcl reencrypt_all.tcl maintainer.enabled) do (
+        if /i "%%~nxf"=="%%n" set "BAD=%%~nxf"
+    )
+)
+if defined BAD (
+    echo PAYLOAD CHECK FAILED: unexpected !BAD! in %~1
+    exit /b 1
+)
+rem Working files anywhere in the tree (*.ini / *.idx, hidden ones included)
+for %%e in (ini idx) do (
+    for /f "delims=" %%f in ('dir /b /s /a "%~1\*.%%e" 2^>nul') do (
+        echo PAYLOAD CHECK FAILED: unexpected working file %%f in %~1
+        exit /b 1
+    )
+)
+if exist "%~1\tests" (
+    echo PAYLOAD CHECK FAILED: tests directory in %~1
+    exit /b 1
+)
+if exist "%~1\original_files" (
+    echo PAYLOAD CHECK FAILED: original_files directory in %~1
+    exit /b 1
+)
+endlocal & exit /b 0
 
 :done
 rem Every jump to :done is a failure path - return a non-zero exit code.

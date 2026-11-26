@@ -27,8 +27,8 @@
 | RA2YRMT | `rulesmd.enc`, `aimd.enc`, `artmd.enc`, `soundmd.enc`, `thememd.enc`, `evamd.enc`, `audio_ra2.enc`, `audio_yr.enc` |
 | MOMT | `rulesmo.enc`, `aimo.enc`, `artmo.enc`, `soundmo.enc`, `thememo.enc`, `evamo.enc`, `audio.enc`, `audio_ra2.enc`, `audio_yr.enc` |
 
-Все `.enc` записываются в корень проекта командой
-`crypto_utils.tcl --encrypt-originals` (см. README.ru.md, Перешифровка файлов).
+Наборы `.enc` готовит сопровождающий; к моменту сборки каждый файл набора
+варианта должен лежать в корне проекта.
 `build.bat` не собирает вариант, пока хотя бы один файл его набора отсутствует.
 
 ## Необходимые инструменты
@@ -55,7 +55,7 @@
 
 | Файл | Назначение |
 |---|---|
-| `CryptoVisionLib_xp.dll` | Криптографическая библиотека (NaCl/XSalsa20+Poly1305) |
+| `CryptoVisionLib_xp.dll` | Криптографическая библиотека (runtime, нужна рядом с exe) |
 | `settings.cfg` | Конфигурация MOMT (Tcl dict формат, gamemode `ares`) |
 | `settings-ra2.cfg` | Конфигурация RA2MT (gamemode `ra2`) |
 | `settings-yr.cfg` | Конфигурация RA2YRMT (gamemode `yr`) |
@@ -75,7 +75,7 @@ build.bat mo       # только MOMT
 
 Скрипт выполняет следующие шаги:
 
-0. **Синхронизация INI2MAP-Tester.vfs** — robocopy исходных директорий `.tcl` (`aicheck`, `checks`, `map_parser`, `rules_parser`, `validators`, `taglist`, `others`) и корневых модулей `.tcl` в `INI2MAP-Tester.vfs\lib\app-ini2map-tester\`, чтобы starpack соответствовал исходникам (шаг 0 в build.bat)
+0. **Синхронизация INI2MAP-Tester.vfs** — robocopy исходных директорий `.tcl` (`aicheck`, `checks`, `map_parser`, `rules_parser`, `validators`, `taglist`, `others`) и корневых модулей `.tcl` в `INI2MAP-Tester.vfs\lib\app-ini2map-tester\`, чтобы starpack соответствовал исходникам (шаг 0 в build.bat). vfs пересобирается с нуля при каждой сборке, список модулей — белый: `crypto_utils.tcl`, `check_key.tcl`, `encrypt_v2.tcl` и `reencrypt_all.tcl` — инструменты мейнтейнера и в пакет не попадают, а сборка останавливается, если в пейлоаде или в готовой папке `Build\<variant>` есть `*.ini`/`*.idx`, `tests/`, `original_files/`, `decrypt_helper.tcl`, `MAINTAINER.md` или модуль мейнтейнера
 1. **Скачивание ResourceHacker** — если `tools\ResourceHacker.exe` отсутствует, автоматически скачивается с angusj.com
 2. **Копирование base.exe** — создание копии Tcl runtime (нельзя оборачивать запущенный экземпляр)
 3. **sdx wrap** — упаковка `INI2MAP-Tester.vfs/` в starpack (один раз, общий для всех вариантов):
@@ -96,6 +96,9 @@ build.bat mo       # только MOMT
      (RA2MT использует `RA2MT.ico` + `tools\version_ra2.res`, RA2YRMT — `RA2YRMT.ico` + `tools\version_ra2yr.res`)
    - копирование runtime файлов в `Build\<вариант>\`: `CryptoVisionLib_xp.dll`, собственный конфиг варианта как `settings.cfg`, его набор `.enc`, `tags-*.cfg`, `sha256.tcl`, `ffidl_xp.dll`, сгенерированный `pkgIndex.tcl`, `json_report.exe`
 5. **Общее** — `json_report.exe` копируется в корень проекта (HTML-отчёт: `json_report mission.log`), туда же `ffidl_xp.dll` (для script mode)
+6. **Защищённые ресурсы** — для каждого варианта `build.bat` создаёт runtime-файл
+   с ключевым материалом сборки и ставит ему атрибуты hidden + system. Если
+   ключевого материала нет, сборка останавливается с кодом выхода 1.
 
 ### Ручная сборка (пошагово)
 
@@ -122,6 +125,7 @@ copy tags-*.cfg Build\MOMT\
 copy others\sha256\sha256.tcl Build\MOMT\
 copy others\ffidl\ffidl_xp.dll Build\MOMT\
 copy third_party\json_report\json_report.exe json_report.exe
+# шаг 6 (защищённые ресурсы) — только для сопровождающего: используйте build.bat
 ```
 
 Для RA2MT: `settings-ra2.cfg` -> `Build\RA2MT\settings.cfg` и набор RA2 `.enc`;
@@ -148,10 +152,10 @@ H:\MAP\
 ├── rules_parser.tcl             # Парсер INI правил
 ├── map_parser.tcl               # Парсер .map файлов
 ├── audio_parser.tcl             # Парсер аудио ресурсов
-├── crypto_utils.tcl             # Утилита шифрования/дешифровки
-├── encrypt_v2.tcl               # V2 шифрование
-├── check_key.tcl                # Проверка ключа
-├── reencrypt_all.tcl            # Перешифровка всех файлов
+├── crypto_utils.tcl             # Инструменты шифрования (maintainer)
+├── encrypt_v2.tcl               # Шифрование V2 (maintainer)
+├── check_key.tcl                # Проверка ключа (maintainer)
+├── reencrypt_all.tcl            # Перешифровка (maintainer)
 ├── taglist/taglist.tcl           # Валидация тегов
 ├── checks/*.tcl                 # 124+ модулей проверок
 ├── validators/*.tcl             # Модули валидации
@@ -163,7 +167,7 @@ H:\MAP\
 ├── third_party/                 # Исходники и скрипты сборки
 │   ├── CryptoVisionLib/         # Исходник крипто-DLL + build_xp.bat
 │   ├── ffidl/                   # Исходник ffidl + build_xp.bat
-│   ├── patch_key/               # Исходник PatchDll + build_xp.bat
+│   ├── patch_key/               # Исходник инструмента сопровождающего + build_xp.bat
 │   └── tag_reference/           # Tag Reference.xlsx, Regular_to_Excel.txt, generate_tags.ps1
 ├── CryptoVisionLib_xp.dll          # Криптографическая DLL
 ├── settings.cfg                 # Конфигурация MOMT (gamemode ares)
@@ -230,3 +234,4 @@ C:\Tcl\bin\tclsh86.exe H:\MAP\main.tcl <map_file>
 - **ffidl_xp.dll** — статически слинкованная ffidl (без зависимостей libffi), совместимая с Windows XP.
 - **CryptoVisionLib_xp.dll** — статически слинкованная крипто-DLL (ADVAPI32+KERNEL32+msvcrt), совместимая с Windows XP.
 - **third_party/** — исходный код и скрипты сборки для библиотек (CryptoVisionLib, ffidl, patch_key, json_report, tag_reference).
+- **Защищённые ресурсы.** Папка варианта работает только целиком: exe + свой `settings.cfg`, набор `.enc` и DLL. Не переименовывайте exe и не смешивайте файлы вариантов.

@@ -28,8 +28,8 @@ stops the build with `ERROR: unknown variant "<arg>"`.
 | RA2YRMT | `rulesmd.enc`, `aimd.enc`, `artmd.enc`, `soundmd.enc`, `thememd.enc`, `evamd.enc`, `audio_ra2.enc`, `audio_yr.enc` |
 | MOMT | `rulesmo.enc`, `aimo.enc`, `artmo.enc`, `soundmo.enc`, `thememo.enc`, `evamo.enc`, `audio.enc`, `audio_ra2.enc`, `audio_yr.enc` |
 
-All `.enc` files are written into the project root by
-`crypto_utils.tcl --encrypt-originals` (see README.md, Re-encrypting Files).
+The `.enc` sets are produced by the maintainer tooling; every file of a
+variant's set must exist in the project root before building.
 `build.bat` refuses to build a variant while any file of its set is missing.
 
 ## Required Tools
@@ -56,7 +56,7 @@ All `.enc` files are written into the project root by
 
 | File | Purpose |
 |---|---|
-| `CryptoVisionLib_xp.dll` | Cryptographic library (NaCl/XSalsa20+Poly1305) |
+| `CryptoVisionLib_xp.dll` | Cryptographic library (runtime, must sit next to the exe) |
 | `settings.cfg` | MOMT configuration (Tcl dict format, gamemode `ares`) |
 | `settings-ra2.cfg` | RA2MT configuration (gamemode `ra2`) |
 | `settings-yr.cfg` | RA2YRMT configuration (gamemode `yr`) |
@@ -76,7 +76,7 @@ build.bat mo       # MOMT only
 
 The script performs the following steps:
 
-0. **Sync INI2MAP-Tester.vfs** — robocopy the source `.tcl` trees (`aicheck`, `checks`, `map_parser`, `rules_parser`, `validators`, `taglist`, `others`) and the root `.tcl` modules into `INI2MAP-Tester.vfs\lib\app-ini2map-tester\`, so the starpack matches the sources (build.bat step 0)
+0. **Sync INI2MAP-Tester.vfs** — robocopy the source `.tcl` trees (`aicheck`, `checks`, `map_parser`, `rules_parser`, `validators`, `taglist`, `others`) and the root `.tcl` modules into `INI2MAP-Tester.vfs\lib\app-ini2map-tester\`, so the starpack matches the sources (build.bat step 0). The vfs is rebuilt from scratch on every build and the module list is a whitelist: `crypto_utils.tcl`, `check_key.tcl`, `encrypt_v2.tcl` and `reencrypt_all.tcl` are maintainer tooling and are never packaged, and the build stops if the payload or a finished `Build\<variant>` folder contains `*.ini`/`*.idx`, `tests/`, `original_files/`, `decrypt_helper.tcl`, `MAINTAINER.md` or a maintainer module
 1. **Download ResourceHacker** — if `tools\ResourceHacker.exe` is missing, it is downloaded automatically from angusj.com
 2. **Copy base.exe** — create a copy of the Tcl runtime (a running instance cannot be wrapped)
 3. **sdx wrap** — pack `INI2MAP-Tester.vfs/` into a starpack (once, shared by all variants):
@@ -97,6 +97,9 @@ The script performs the following steps:
      (RA2MT uses `RA2MT.ico` + `tools\version_ra2.res`, RA2YRMT uses `RA2YRMT.ico` + `tools\version_ra2yr.res`)
    - copy the runtime files into `Build\<variant>\`: `CryptoVisionLib_xp.dll`, the variant's own config as `settings.cfg`, its `.enc` set, `tags-*.cfg`, `sha256.tcl`, `ffidl_xp.dll`, the generated `pkgIndex.tcl`, `json_report.exe`
 5. **Shared** — `json_report.exe` is copied into the project root (HTML report: `json_report mission.log`), `ffidl_xp.dll` too (for script mode)
+6. **Protected assets** — per variant, `build.bat` writes the runtime file
+   that carries the build's key material and marks it hidden + system. If no
+   key material is available, the build stops with exit code 1.
 
 ### Manual build (step by step)
 
@@ -123,6 +126,7 @@ copy tags-*.cfg Build\MOMT\
 copy others\sha256\sha256.tcl Build\MOMT\
 copy others\ffidl\ffidl_xp.dll Build\MOMT\
 copy third_party\json_report\json_report.exe json_report.exe
+# step 6 (protected assets) is maintainer-only: use build.bat for a runnable variant
 ```
 
 For RA2MT: `settings-ra2.cfg` -> `Build\RA2MT\settings.cfg` and the RA2 `.enc`
@@ -149,10 +153,10 @@ H:\MAP\
 ├── rules_parser.tcl             # Rules INI parser
 ├── map_parser.tcl               # .map file parser
 ├── audio_parser.tcl             # Audio resource parser
-├── crypto_utils.tcl             # Encrypt/decrypt utility
-├── encrypt_v2.tcl               # V2 encryption
-├── check_key.tcl                # Key check
-├── reencrypt_all.tcl            # Re-encrypt all files
+├── crypto_utils.tcl             # Encryption tooling (maintainer)
+├── encrypt_v2.tcl               # V2 encryption (maintainer)
+├── check_key.tcl                # Key check (maintainer)
+├── reencrypt_all.tcl            # Re-encryption tooling (maintainer)
 ├── taglist/taglist.tcl          # Tag validation
 ├── checks/*.tcl                 # 124+ check modules
 ├── validators/*.tcl             # Validation modules
@@ -164,7 +168,7 @@ H:\MAP\
 ├── third_party/                 # Sources and build scripts
 │   ├── CryptoVisionLib/         # Crypto DLL source + build_xp.bat
 │   ├── ffidl/                   # ffidl source + build_xp.bat
-│   ├── patch_key/               # PatchDll source + build_xp.bat
+│   ├── patch_key/               # Maintainer tooling source + build_xp.bat
 │   └── tag_reference/           # Tag Reference.xlsx, Regular_to_Excel.txt, generate_tags.ps1
 ├── CryptoVisionLib_xp.dll       # Cryptographic DLL
 ├── settings.cfg                 # MOMT configuration (gamemode ares)
@@ -231,3 +235,4 @@ Interactive launcher: `__mission.bat`
 - **ffidl_xp.dll** — statically linked ffidl (no libffi dependencies), Windows XP compatible.
 - **CryptoVisionLib_xp.dll** — statically linked crypto DLL (ADVAPI32+KERNEL32+msvcrt), Windows XP compatible.
 - **third_party/** — source code and build scripts for the libraries (CryptoVisionLib, ffidl, patch_key, json_report, tag_reference).
+- **Protected assets.** A variant folder is only usable complete: exe + its own `settings.cfg`, `.enc` set and DLL. Never rename the exe or mix files between variants.
