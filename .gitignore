@@ -1,12 +1,20 @@
 # Build output
 Build/
 INI2MAP-Tester.vfs/
+# Wrapped starpack (no extension); build.bat deletes it on success, a failed
+# build leaves it behind
+INI2MAP-Tester
+
+# Local-only asset: repo social preview, uploaded in GitHub Settings
+INI2MAP_Tester_logo.jpg
 
 # Original game files + Secrets
 original_files/
 *.enc
 settings.local.cfg
 README.modders.md
+MAINTAINER.md
+maintainer.enabled
 decrypt_helper.tcl
 third_party/CryptoVisionLib
 third_party/ffidl
