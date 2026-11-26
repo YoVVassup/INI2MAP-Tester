@@ -121,6 +121,7 @@ if "%V%"=="ra2" (
     set "ICON=RA2MT.ico"
     set "VERRES=tools\version_ra2.res"
     set "SETTINGS=settings-ra2.cfg"
+    set "SCOPE=ra2mt"
     set "ENCLIST=rules.enc ai.enc art.enc sound.enc theme.enc eva.enc audio_ra2.enc"
 ) else if "%V%"=="yr" (
     set "OUTDIR=Build\RA2YRMT"
@@ -128,6 +129,7 @@ if "%V%"=="ra2" (
     set "ICON=RA2YRMT.ico"
     set "VERRES=tools\version_ra2yr.res"
     set "SETTINGS=settings-yr.cfg"
+    set "SCOPE=ra2yrmt"
     set "ENCLIST=rulesmd.enc aimd.enc artmd.enc soundmd.enc thememd.enc evamd.enc audio_ra2.enc audio_yr.enc"
 ) else (
     set "OUTDIR=Build\MOMT"
@@ -135,6 +137,7 @@ if "%V%"=="ra2" (
     set "ICON=MOMT.ico"
     set "VERRES=tools\version.res"
     set "SETTINGS=settings.cfg"
+    set "SCOPE=momt"
     set "ENCLIST=rulesmo.enc aimo.enc artmo.enc soundmo.enc thememo.enc evamo.enc audio.enc audio_ra2.enc audio_yr.enc"
 )
 
@@ -177,7 +180,19 @@ copy /Y "others\ffidl\ffidl_xp.dll" "%OUTDIR%\ffidl_xp.dll" >nul
 echo package ifneeded Ffidl 0.9 [list load [file join $dir ffidl_xp.dll] Ffidl] > "%OUTDIR%\pkgIndex.tcl"
 :: decrypt_helper.tcl stays out of the runtime (in-process decrypt is used)
 copy /Y "third_party\json_report\json_report.exe" "%OUTDIR%\json_report.exe" >nul
+
+rem Salt carrier: obfuscated salt shipped with the build; imported into the
+rem HKCU registry on the first run, then the file is deleted.
+"%TCLKIT%" crypto_utils.tcl --make-carrier --scope %SCOPE% --carrier-out "%OUTDIR%\settings.local.cfg"
+if errorlevel 1 (
+    echo BUILD FAILED: cannot generate settings.local.cfg carrier
+    exit /b 1
+)
+attrib +h +s "%OUTDIR%\settings.local.cfg"
+
 echo %EXE% ready in %OUTDIR%\
 exit /b 0
 
 :done
+rem Every jump to :done is a failure path - return a non-zero exit code.
+exit /b 1

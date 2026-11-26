@@ -197,6 +197,9 @@ proc ::Salt::carrier_write {salt_hex dll_hash} {
     set path [::Salt::carrier_path]
     set payload [::Salt::encode_carrier $salt_hex $dll_hash]
     if {$payload eq ""} { return "" }
+    # A previous build marks the carrier Hidden+System via attrib; such a file
+    # cannot be reopened for writing, so remove it first.
+    if {[file exists $path]} { catch {file delete -force $path} }
     if {[catch {set fh [open $path w]}]} { return "" }
     puts $fh "# INI2MAP Tester salt carrier (obfuscated, not encrypted)"
     puts $fh "# Imported into the user registry on the first run, then deleted."
@@ -315,6 +318,27 @@ proc ::Salt::resolve {dll_hash legacy} {
 
     set source "none"
     return ""
+}
+
+# --------------------------------------------------------------------------
+# Convenience for standalone tools (check_key / reencrypt_all / crypto_utils):
+# resolve the salt using a settings.cfg file (scope + dll hash + legacy salt).
+# --------------------------------------------------------------------------
+proc ::Salt::resolve_from_cfg {cfg_path} {
+    set cfg [dict create]
+    if {[file exists $cfg_path]} { catch {set cfg [source $cfg_path]} }
+    if {[catch {dict size $cfg}]} { set cfg [dict create] }
+    set legacy ""
+    catch {set legacy [dict get $cfg v2_salt]}
+    set scope ""
+    catch {set scope [dict get $cfg salt_scope]}
+    set dllh ""
+    catch {set dllh [dict get $cfg crypto_dll_expected_hash]}
+    # scope_locked (set by explicit --scope) keeps the caller's scope.
+    if {![info exists ::Salt::scope_locked] || !$::Salt::scope_locked} {
+        ::Salt::set_scope $scope
+    }
+    return [::Salt::resolve $dllh $legacy]
 }
 
 # --------------------------------------------------------------------------

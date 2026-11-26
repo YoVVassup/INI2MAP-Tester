@@ -72,7 +72,8 @@ proc count_unique_enc_names {} {
 
 test cu-dry-run "encrypt-originals dry-run lists all original files" -body {
     set n [count_original_files]
-    lassign [run_crypto_utils --encrypt-originals --dry-run] code output
+    set fixed "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
+    lassign [run_crypto_utils --encrypt-originals --dry-run --salt $fixed] code output
     list $code [string match "*$n ok, 0 failed*" $output] [string match "*rulesmo.ini*" $output]
 } -result {0 1 1}
 
@@ -83,7 +84,8 @@ test cu-dry-run-no-write "dry-run writes no .enc files" -body {
     set outdir [file join $test_tmpdir "momt_dryrun_out"]
     file delete -force $outdir
     file mkdir $outdir
-    lassign [run_crypto_utils --encrypt-originals --dry-run --out $outdir] code output
+    set fixed "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
+    lassign [run_crypto_utils --encrypt-originals --dry-run --salt $fixed --out $outdir] code output
     set written [llength [glob -nocomplain -directory $outdir *]]
     file delete -force $outdir
     list $code $written
@@ -95,7 +97,8 @@ test cu-dry-run-no-write "dry-run writes no .enc files" -body {
 test cu-encrypt-verify "encrypt-originals to temp dir, decryptable output" -body {
     set outdir [file join $test_tmpdir "momt_enc_out"]
     file delete -force $outdir
-    lassign [run_crypto_utils --encrypt-originals --out $outdir] code output
+    set fixed "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
+    lassign [run_crypto_utils --encrypt-originals --salt $fixed --out $outdir] code output
     set produced [llength [glob -nocomplain -directory $outdir *.enc]]
     set expected [count_unique_enc_names]
     # Verify a small file: evamo.enc should decrypt back to evamo.ini via decrypt_helper
@@ -106,7 +109,7 @@ test cu-encrypt-verify "encrypt-originals to temp dir, decryptable output" -body
         set dec_file [file join $test_tmpdir "momt_enc_out_evamo.bin"]
         set tclsh [info nameofexecutable]
         catch {
-            exec cmd /c "$tclsh $helper [file dirname $helper] $outdir/evamo.enc > $dec_file 2>nul"
+            exec cmd /c "$tclsh $helper --salt 00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff [file dirname $helper] $outdir/evamo.enc > $dec_file 2>nul"
         }
         if {[file exists $dec_file]} {
             set fh [open $dec_file r]
@@ -151,8 +154,15 @@ test cu-usage "usage text shown when no files and no mode" -body {
 # --------------------------------------------------------------------------
 test cu-decrypt-buffer-v2 "decrypt_buffer_v2 works after round-trip self-test" -body {
     source $crypto_util
-    # Salt comes from operational config (settings.cfg), not from the test source.
-    set salt [dict get [source [file join $script_dir "settings.cfg"]] v2_salt]
+    # Operational salt: env > HKCU registry (scoped) > carrier > settings.cfg
+    set salt ""
+    if {[llength [info procs ::Salt::resolve_from_cfg]]} {
+        set salt [::Salt::resolve_from_cfg [file join $script_dir "settings.cfg"]]
+    }
+    if {$salt eq ""} {
+        catch {set salt [dict get [source [file join $script_dir "settings.cfg"]] v2_salt]}
+    }
+    if {$salt eq ""} { error "no operational V2 salt available (registry/settings.cfg)" }
     set dec [decrypt_buffer_v2 [file join $script_dir "evamo.enc"] $salt]
     set fh [open [file join $script_dir "original_files" "Mental Omega" "evamo.ini"] r]
     fconfigure $fh -translation binary
@@ -160,6 +170,35 @@ test cu-decrypt-buffer-v2 "decrypt_buffer_v2 works after round-trip self-test" -
     close $fh
     expr {$dec ne "" && $dec eq $orig}
 } -result 1
+
+# --------------------------------------------------------------------------
+# Test 7: --make-carrier writes an obfuscated carrier bound to scope + dll hash
+# --------------------------------------------------------------------------
+test cu-make-carrier "make-carrier writes a carrier1 payload" -body {
+    set out [file join $test_tmpdir "momt_carrier_test.cfg"]
+    file delete -force $out
+    set fixed "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
+    lassign [run_crypto_utils --make-carrier --scope unittest --carrier-out $out --salt $fixed] code output
+    set exists [file exists $out]
+    set payload ""
+    if {$exists} {
+        set fh [open $out r]
+        while {[gets $fh line] >= 0} {
+            set t [string trim $line]
+            if {[regexp {^carrier1\s+([0-9a-fA-F]+)$} $t -> hex]} { set payload $hex }
+        }
+        close $fh
+    }
+    # The payload must decode back to the salt with scope + settings.cfg DLL hash
+    source [file join $script_dir "salt.tcl"]
+    set ::Salt::scope "unittest"
+    set ::Salt::scope_explicit 1
+    set dllh ""
+    catch {set dllh [dict get [source [file join $script_dir "settings.cfg"]] crypto_dll_expected_hash]}
+    set decoded [::Salt::decode_carrier $payload $dllh]
+    file delete -force $out
+    list $code $exists [expr {$decoded eq $fixed}] [string match "*Carrier written*" $output]
+} -result {0 1 1 1}
 
 # --------------------------------------------------------------------------
 # Cleanup and run

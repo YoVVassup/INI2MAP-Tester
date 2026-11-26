@@ -24,11 +24,17 @@ if {$key_result != 0} {
     exit 1
 }
 
-# Salt comes from operational config (settings.cfg), not from this script.
+# Salt comes from operational storage (env > HKCU registry > carrier > settings.cfg)
 set salt_hex ""
-catch { set salt_hex [dict get [source [file join $script_dir "settings.cfg"]] v2_salt] }
+catch {source [file join $script_dir "salt.tcl"]}
+if {[llength [info procs ::Salt::resolve_from_cfg]]} {
+    set salt_hex [::Salt::resolve_from_cfg [file join $script_dir "settings.cfg"]]
+    puts "Salt source: $::Salt::source"
+} else {
+    catch { set salt_hex [dict get [source [file join $script_dir "settings.cfg"]] v2_salt] }
+}
 if {$salt_hex eq ""} {
-    puts "ERROR: v2_salt not found in settings.cfg"
+    puts "ERROR: no V2 salt available (env/registry/carrier/settings.cfg)"
     exit 1
 }
 

@@ -3,6 +3,7 @@ set map_dir [file dirname [file normalize [info script]]]
 
 lappend ::auto_path [file join $map_dir "others" "sha256"]
 lappend ::auto_path [file join $map_dir "others" "ffidl"]
+package require sha256
 
 # Load crypto_utils which sets up ffidl bindings for encrypt/decrypt
 source [file join $map_dir "crypto_utils.tcl"]
@@ -21,14 +22,26 @@ close $dh
 set dll_hash [::sha2::sha256 -hex $dll_data]
 puts "New DLL hash: $dll_hash"
 
-set salt_hex [crypto_config_value "v2_salt"]
+# Salt comes from operational storage (env > HKCU registry > carrier > settings.cfg)
+if {![llength [info procs ::Salt::resolve_from_cfg]]} {
+    catch {source [file join $map_dir "salt.tcl"]}
+}
+set salt_hex ""
+if {[llength [info procs ::Salt::resolve_from_cfg]]} {
+    set salt_hex [::Salt::resolve_from_cfg [file join $map_dir "settings.cfg"]]
+    puts "Salt source: $::Salt::source"
+} else {
+    set salt_hex [crypto_config_value "v2_salt"]
+}
 if {$salt_hex eq ""} {
-    puts "ERROR: v2_salt not found in settings.cfg"
+    puts "ERROR: no V2 salt available (env/registry/carrier/settings.cfg)"
     exit 1
 }
 
 set originals_dir [file join $map_dir "original_files"]
-set build_dir [file join $map_dir "Build"]
+# Output: the project root - build.bat (ENCLIST), check_key and the tests all
+# read the .enc set from there; Build\<variant>\ only receives copies.
+set build_dir $map_dir
 
 # Collect originals recursively: original_files/ itself plus every variant
 # subfolder ({Mental Omega, Red Alert 2, Red Alert 2 Yuris Revenge}).

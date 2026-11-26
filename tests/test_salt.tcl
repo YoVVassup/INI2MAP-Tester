@@ -306,6 +306,20 @@ test salt-config-integration "Config::load applies salt_scope and resolves" -bod
 } -result {cfgscope 1 settings.cfg}
 
 # --------------------------------------------------------------------------
+# Test 22: resolve_from_cfg reads scope + legacy salt from a settings file
+# --------------------------------------------------------------------------
+test salt-resolve-from-cfg "resolve_from_cfg applies scope from cfg" -body {
+    cleanup_salt_state
+    set tmpcfg [file join $test_tmpdir "_from_cfg_settings.cfg"]
+    set fh [open $tmpcfg w]
+    puts $fh "return \[dict create v2_salt $salt_hex salt_scope unittest2 crypto_dll_expected_hash $dll_hash\]"
+    close $fh
+    set v [::Salt::resolve_from_cfg $tmpcfg]
+    file delete -force $tmpcfg
+    list [expr {$v eq $salt_hex}] [::Salt::get_scope]
+} -result {1 unittest2}
+
+# --------------------------------------------------------------------------
 # Cleanup and run
 # --------------------------------------------------------------------------
 cleanup_salt_state

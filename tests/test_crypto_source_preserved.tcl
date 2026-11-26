@@ -18,8 +18,16 @@ package require sha256
 set ::app_dir $map_dir
 set ::crypto_dll_expected_hash [string tolower [::sha2::sha256 -hex [read [open [file join $map_dir "CryptoVisionLib_xp.dll"] rb]]]]
 source [file join $map_dir "crypto.tcl"]
-# Salt comes from operational config (settings.cfg), not from the test source.
-set ::Crypto::v2_salt [dict get [source [file join $map_dir "settings.cfg"]] v2_salt]
+# Salt comes from operational storage (env > HKCU registry > carrier >
+# settings.cfg); a fixed round-trip salt is only the last-resort fallback.
+set ::Crypto::v2_salt ""
+catch {source [file join $map_dir "salt.tcl"]}
+if {[llength [info procs ::Salt::resolve_from_cfg]]} {
+    set ::Crypto::v2_salt [::Salt::resolve_from_cfg [file join $map_dir "settings.cfg"]]
+}
+if {$::Crypto::v2_salt eq ""} {
+    set ::Crypto::v2_salt "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+}
 
 if {![::Crypto::init]} {
     puts "FAILED: Crypto init failed"

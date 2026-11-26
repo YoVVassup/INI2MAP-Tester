@@ -16,6 +16,13 @@
 #----------------------------------------------------------------------------------------------------------
 
 set script_dir [file dirname [file normalize [info script]]]
+
+# Salt storage module (HKCU registry + obfuscated carrier) - guarded, no-op
+# when already loaded (tests source this file in-process).
+if {![llength [info procs ::Salt::resolve_from_cfg]] && [file exists [file join $script_dir "salt.tcl"]]} {
+    catch {source [file join $script_dir "salt.tcl"]}
+}
+
 lappend ::auto_path [file join $script_dir "others" "ffidl"]
 lappend ::auto_path [file join $script_dir "others" "sha256"]
 
@@ -138,6 +145,28 @@ proc crypto_config_value {key} {
 }
 
 # --------------------------------------------------------------------------
+# Effective V2 salt for this run:
+#   env INI2MAP_SALT > HKCU registry (scope from settings.cfg) > carrier >
+#   v2_salt from settings.cfg (legacy fallback).
+# Falls back to plain settings.cfg lookup when salt.tcl is unavailable.
+# --------------------------------------------------------------------------
+proc resolve_v2_salt {} {
+    global script_dir
+    if {[llength [info procs ::Salt::resolve_from_cfg]]} {
+        return [::Salt::resolve_from_cfg [file join $script_dir "settings.cfg"]]
+    }
+    return [crypto_config_value "v2_salt"]
+}
+
+# Human-readable origin of the last resolve_v2_salt call
+proc resolve_salt_source {} {
+    if {[info exists ::Salt::source] && $::Salt::source ne ""} {
+        return $::Salt::source
+    }
+    return "settings.cfg"
+}
+
+# --------------------------------------------------------------------------
 # Encrypt every file in <src_dir> to <out_dir>/<basename>.enc
 # --------------------------------------------------------------------------
 proc encrypt_originals_batch {src_dir out_dir salt_hex {dry_run 0}} {
@@ -223,6 +252,9 @@ if {[llength $argv] > 0} {
     set out_dir ""
     set force 0
     set dry_run 0
+    set make_carrier 0
+    set scope_arg ""
+    set carrier_out ""
     set i 0
     set argc [llength $argv]
     while {$i < $argc} {
@@ -253,11 +285,74 @@ if {[llength $argv] > 0} {
             "--dry-run" {
                 set dry_run 1
             }
+            "--make-carrier" {
+                set make_carrier 1
+            }
+            "--scope" {
+                incr i
+                if {$i >= $argc} {
+                    puts "ERROR: --scope requires a scope name argument"
+                    exit 1
+                }
+                set scope_arg [lindex $argv $i]
+            }
+            "--carrier-out" {
+                incr i
+                if {$i >= $argc} {
+                    puts "ERROR: --carrier-out requires a file argument"
+                    exit 1
+                }
+                set carrier_out [lindex $argv $i]
+            }
             default {
                 lappend files $arg
             }
         }
         incr i
+    }
+
+    if {$make_carrier} {
+        if {![llength [info procs ::Salt::carrier_write]]} {
+            puts "ERROR: salt.tcl not available - cannot generate a carrier"
+            exit 1
+        }
+        if {$scope_arg ne ""} {
+            ::Salt::set_scope $scope_arg
+            # Explicit --scope wins over salt_scope from settings.cfg:
+            # resolve_from_cfg must not re-apply the cfg scope (it would make
+            # the registry lookup run under the wrong scope key).
+            set ::Salt::scope_locked 1
+        } else {
+            set sc [crypto_config_value "salt_scope"]
+            if {$sc ne ""} { ::Salt::set_scope $sc }
+        }
+        if {$salt_hex eq ""} {
+            set salt_hex [resolve_v2_salt]
+            set salt_origin [resolve_salt_source]
+        } else {
+            set salt_origin "--salt"
+        }
+        if {$salt_hex eq ""} {
+            puts "ERROR: no salt (env/registry/carrier/settings.cfg) - carrier not written"
+            exit 1
+        }
+        set cfg_hash [crypto_config_value "crypto_dll_expected_hash"]
+        if {$cfg_hash eq ""} {
+            puts "ERROR: crypto_dll_expected_hash not set in settings.cfg - carrier not written"
+            exit 1
+        }
+        if {$carrier_out eq ""} { set carrier_out [file join $script_dir "settings.local.cfg"] }
+        set ::Salt::carrier_file $carrier_out
+        set path [::Salt::carrier_write $salt_hex $cfg_hash]
+        if {$path eq ""} {
+            puts "ERROR: cannot write carrier file: $carrier_out"
+            exit 1
+        }
+        puts "Carrier written: $path"
+        puts "  scope:  [::Salt::get_scope]"
+        puts "  salt:   taken from $salt_origin"
+        puts "  import: first run copies it into the HKCU registry, then deletes the file"
+        exit 0
     }
 
     if {$encrypt_originals} {
@@ -268,13 +363,13 @@ if {[llength $argv] > 0} {
             exit 1
         }
         if {$salt_hex eq ""} {
-            set salt_hex [crypto_config_value "v2_salt"]
-            if {$salt_hex ne ""} { puts "Salt: taken from settings.cfg (v2_salt)" }
+            set salt_hex [resolve_v2_salt]
+            if {$salt_hex ne ""} { puts "Salt: taken from [resolve_salt_source]" }
         } else {
             puts "Salt: taken from --salt"
         }
         if {$salt_hex eq ""} {
-            puts "ERROR: no salt. Pass --salt <hex> or set v2_salt in settings.cfg"
+            puts "ERROR: no salt. Pass --salt <hex> or set it in the HKCU registry / settings.cfg"
             exit 1
         }
         if {$out_dir eq ""} { set out_dir $script_dir }
@@ -289,18 +384,22 @@ if {[llength $argv] > 0} {
     if {[llength $files] == 0} {
         puts "Usage: tclsh crypto_utils.tcl \[options\] <files...>"
         puts "       tclsh crypto_utils.tcl --encrypt-originals \[options\]"
+        puts "       tclsh crypto_utils.tcl --make-carrier \[--scope <name>\] \[--carrier-out <file>\]"
         puts "Options: --salt <hex>             Use v2 encryption"
         puts "         --encrypt-originals      Encrypt original_files/* to .enc in the project root"
         puts "         --out <dir>              Output directory for --encrypt-originals (default: project root)"
         puts "         --force                  Encrypt even on DLL hash mismatch"
         puts "         --dry-run                Show target paths without encrypting"
+        puts "         --make-carrier           Write an obfuscated settings.local.cfg salt carrier"
+        puts "         --scope <name>           Salt scope for --make-carrier (default: settings.cfg salt_scope)"
+        puts "         --carrier-out <file>     Carrier output path (default: ./settings.local.cfg)"
         exit 1
     }
     foreach file $files {
         set base [file rootname $file]
         set ext [file extension $file]
         if {$salt_hex eq ""} {
-            puts "ERROR: no salt for $file. V1 encryption was removed; pass --salt <hex> or set v2_salt in settings.cfg"
+            puts "ERROR: no salt for $file. V1 encryption was removed; pass --salt <hex> or configure the V2 salt (registry / settings.cfg)"
             exit 1
         }
         puts "Encrypting (v2): $file -> ${base}_enc${ext}"
@@ -308,11 +407,9 @@ if {[llength $argv] > 0} {
     }
 } else {
     puts "Testing V2 round-trip..."
-    set salt_hex [crypto_config_value "v2_salt"]
-    if {$salt_hex eq ""} {
-        puts "ERROR: v2_salt not set in settings.cfg (V1 round-trip was removed)"
-        exit 1
-    }
+    # A round-trip works with any 64-hex salt - keep the self-test hermetic
+    # (no dependency on settings.cfg / registry state).
+    set salt_hex "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
     set tmp_base [file join [file normalize [pwd]] "selftest_[pid]"]
     if {[info exists ::env(TEMP)] && $::env(TEMP) ne ""} {
         set tmp_base [file join [file normalize $::env(TEMP)] "ini2map_selftest_[pid]"]
