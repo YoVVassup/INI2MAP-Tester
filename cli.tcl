@@ -16,6 +16,21 @@
 if {[info exists ::CLI::loaded]} { return }
 namespace eval ::CLI { variable loaded 1 }
 
+# --- Maintainer gate -------------------------------------------------------
+# --salt and --show-salt exist for maintainers only. The gate is a marker file
+# next to this script, i.e. inside the payload of a starpack - never next to the
+# exe, so a recipient cannot add it after the fact. build.bat writes it only
+# for a maintainer build (INI2MAP_MAINTAINER); a source checkout needs a local,
+# gitignored copy in the project root.
+namespace eval ::CLI {
+    variable maintainer_mode 0
+    set _cli_dir [file dirname [info script]]
+    if {[file exists [file join $_cli_dir "maintainer.enabled"]]} {
+        set maintainer_mode 1
+    }
+    unset -nocomplain _cli_dir
+}
+
 # --- Parse command line arguments ---
 proc ::CLI::parse {argv} {
     variable cfg_file [file join $::app_dir "settings.cfg"]
@@ -93,6 +108,10 @@ proc ::CLI::parse {argv} {
                 incr i
             }
             "--salt" {
+                if {!$::CLI::maintainer_mode} {
+                    puts stderr "ERROR: Unknown option: $arg"
+                    exit 1
+                }
                 incr i
                 if {$i >= $argc} {
                     puts stderr "ERROR: --salt requires a hex string argument"
@@ -102,6 +121,10 @@ proc ::CLI::parse {argv} {
                 incr i
             }
             "--show-salt" {
+                if {!$::CLI::maintainer_mode} {
+                    puts stderr "ERROR: Unknown option: $arg"
+                    exit 1
+                }
                 set show_salt 1
                 incr i
             }
@@ -221,8 +244,10 @@ proc ::CLI::show_help {} {
     puts {  --timing                  Show timing for each validation phase}
     puts {  --no-log-open             Do not automatically open the log file after validation}
     puts {  --quiet                   Suppress informational console output (errors still shown)}
-    puts {  --salt <hex>              Salt for v2 multi-factor encryption (64+ hex chars)}
-    puts {  --show-salt               Show salt scope/source (registry/carrier/settings.cfg) and exit}
+    if {$::CLI::maintainer_mode} {
+        puts {  --salt <hex>              Salt for v2 multi-factor encryption (64+ hex chars)}
+        puts {  --show-salt               Show salt scope/source (registry/carrier/settings.cfg) and exit}
+    }
     puts {  --baseline                Generate baseline.log from INI checks (no map file needed)}
     puts {  --baseline-filter <file>  Suppress known warnings from baseline file during validation}
     puts {  --help, -h                Show this help and exit}

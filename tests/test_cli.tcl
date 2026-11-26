@@ -16,6 +16,11 @@ source [file join $script_dir logging.tcl]
 set ::app_dir $script_dir
 source [file join $script_dir cli.tcl]
 
+# The tests below cover the maintainer-only options (--salt / --show-salt), so
+# maintainer mode is forced on here. The release side of the gate (both options
+# rejected, help without those lines) is covered by the cli-release-* probes.
+set ::CLI::maintainer_mode 1
+
 # Initialize CLI namespace variables (normally set by parse)
 # Note: cli.tcl must be sourced first (its guard checks ::CLI::loaded)
 namespace eval ::CLI {
@@ -48,6 +53,34 @@ proc reset_cli {} {
     set ::CLI::show_salt 0
     set ::CLI::baseline_mode 0
     set ::CLI::baseline_filter ""
+}
+
+# --------------------------------------------------------------------------
+# Release-mode probe: ::CLI::parse calls exit 1 on a rejected option, which
+# would kill the test interpreter, so the release paths run in a subprocess
+# with maintainer_mode forced to 0. Returns {catch_code exit_status output}.
+# --------------------------------------------------------------------------
+proc release_cli_probe {args} {
+    global test_tmpdir script_dir
+    set helper [file join $test_tmpdir "cli_release_probe.tcl"]
+    set fh [open $helper w]
+    puts $fh {set root [lindex $argv 0]
+set ::app_dir $root
+source [file join $root cli.tcl]
+set ::CLI::maintainer_mode 0
+if {[lindex $argv 1] eq "help"} {
+    ::CLI::show_help
+    exit 0
+}
+::CLI::parse [lrange $argv 1 end]}
+    close $fh
+    set code [catch {exec [info nameofexecutable] $helper $script_dir {*}$args 2>@1} out opts]
+    file delete -force $helper
+    set exitcode 0
+    if {$code} {
+        set exitcode [lindex [dict get $opts -errorcode] end]
+    }
+    return [list $code $exitcode [string trim $out]]
 }
 
 # --------------------------------------------------------------------------
@@ -157,6 +190,30 @@ test cli-show-salt-with-salt "parse --show-salt with --salt" -body {
     ::CLI::parse [list "--salt" "0011" "--show-salt"]
     list $::CLI::show_salt $::CLI::salt
 } -result {1 0011}
+
+# --------------------------------------------------------------------------
+# Test 10c: release build rejects --salt (Unknown option, exit 1)
+# --------------------------------------------------------------------------
+test cli-release-salt-rejected "--salt is rejected without maintainer mode" -body {
+    lassign [release_cli_probe --salt 0011 test.map] code exitcode out
+    list $code $exitcode [string match {*ERROR: Unknown option: --salt*} $out]
+} -result {1 1 1}
+
+# --------------------------------------------------------------------------
+# Test 10d: release build rejects --show-salt (Unknown option, exit 1)
+# --------------------------------------------------------------------------
+test cli-release-show-salt-rejected "--show-salt is rejected without maintainer mode" -body {
+    lassign [release_cli_probe --show-salt test.map] code exitcode out
+    list $code $exitcode [string match {*ERROR: Unknown option: --show-salt*} $out]
+} -result {1 1 1}
+
+# --------------------------------------------------------------------------
+# Test 10e: release help does not advertise the maintainer options
+# --------------------------------------------------------------------------
+test cli-release-help-hides-salt "release help hides the maintainer options" -body {
+    lassign [release_cli_probe help] code exitcode out
+    list $code $exitcode [string match {*--salt*} $out] [string match {*--baseline*} $out]
+} -result {0 0 0 1}
 
 # --------------------------------------------------------------------------
 # Test 11: parse sets baseline_filter

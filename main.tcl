@@ -115,8 +115,9 @@ source [file join $script_dir "orchestrator.tcl"]
 # --------------------------------------------------------------------------
 ::Config::load
 
-# --show-salt: report where the V2 salt comes from, then exit (no map needed)
-if {[info exists ::CLI::show_salt] && $::CLI::show_salt} {
+# --show-salt: report where the V2 salt comes from, then exit (no map needed).
+# Maintainer builds only - the release parse rejects the option outright.
+if {[info exists ::CLI::show_salt] && $::CLI::show_salt && $::CLI::maintainer_mode} {
     ::Salt::show
     exit 0
 }
