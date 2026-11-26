@@ -12,7 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Tcl-8.6-blue?logo=tcl&logoColor=white" alt="Tcl">
   <img src="https://img.shields.io/badge/Platform-Windows-0078d4?logo=windows&logoColor=white" alt="Windows">
-  <img src="https://img.shields.io/badge/Maps-124%2B%20checks-brightgreen" alt="Checks">
+  <img src="https://img.shields.io/badge/Checks-124%20modules-brightgreen" alt="Checks">
   <img src="https://img.shields.io/badge/Tests-1153%20tests-blue" alt="Tests">
   <img src="https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-blue" alt="License">
 </p>
@@ -611,7 +611,7 @@ json_report.exe all01.map.log    # -> all01.map.html
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ████████████████████████████████████████████████████ 99.9%     │
-│  Проходят 1152 из 1153; одному нужен ключ                       │
+│  Проходят 1152 из 1153; одному не хватает ключевого материала   │
 │                                                                 │
 │  Основные модули:                                               │
 │  test_constants.tcl .............. 25/25  ✅                    │
@@ -639,7 +639,7 @@ json_report.exe all01.map.log    # -> all01.map.html
 │  test_crypto_utils_cli.tcl .........  6/7   ❌                  │
 │  test_salt.tcl .................... 22/22  ✅                   │
 │                                                                 │
-│  Плюс 108 отдельных файлов тестов проверок (396 доп. тестов)    │
+│  Плюс 108 прочих тестовых файлов (396 доп. тестов)              │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```

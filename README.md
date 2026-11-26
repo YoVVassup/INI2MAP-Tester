@@ -12,7 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Tcl-8.6-blue?logo=tcl&logoColor=white" alt="Tcl">
   <img src="https://img.shields.io/badge/Platform-Windows-0078d4?logo=windows&logoColor=white" alt="Windows">
-  <img src="https://img.shields.io/badge/Maps-124%2B%20checks-brightgreen" alt="Checks">
+  <img src="https://img.shields.io/badge/Checks-124%20modules-brightgreen" alt="Checks">
   <img src="https://img.shields.io/badge/Tests-1153%20tests-blue" alt="Tests">
   <img src="https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-blue" alt="License">
 </p>
@@ -632,7 +632,7 @@ animations; `prereq_check` (W) validates building prerequisites and TechLevels;
 │  test_crypto_utils_cli.tcl .........  6/7   ❌                  │
 │  test_salt.tcl .................... 22/22  ✅                   │
 │                                                                 │
-│  Plus 108 individual check test files (396 additional tests)    │
+│  Plus 108 other test files (396 additional tests)               │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
