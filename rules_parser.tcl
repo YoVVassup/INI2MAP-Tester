@@ -25,13 +25,6 @@ source [file join [file dirname [info script]] "rules_parser" "collect_used_soun
 # Main entry point: loads all required files and collects used sounds
 # --------------------------------------------------------------------------
 proc ::Rules::load_all {ra2dir rules_file ai_file art_file sound_file theme_file eva_file} {
-    # Pre-decrypt all rules .enc files in one subprocess spawn
-    set enc_paths {}
-    foreach f [list $rules_file $ai_file $art_file $sound_file $theme_file $eva_file] {
-        if {$f ne ""} { lappend enc_paths [file join $ra2dir $f] }
-    }
-    catch {::Crypto::prefetch_enc_files $enc_paths}
-
     set rules_path [file join $ra2dir $rules_file]
     if {[catch {::Rules::load_rules $rules_path} err]} {
         puts stderr "FATAL: Cannot load rules file: $err"

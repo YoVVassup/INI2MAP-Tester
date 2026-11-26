@@ -84,14 +84,6 @@ proc ::Utils::_load_single_audio_idx {filepath} {
 
 # Main function: load all idx files from the provided list
 proc ::Utils::load_audio_indices {idx_files} {
-    # Pre-decrypt all audio .enc files in one subprocess spawn
-    if {[info exists ::Crypto::loaded] && $::Crypto::loaded} {
-        set enc_paths {}
-        foreach idx_file $idx_files {
-            lappend enc_paths [file rootname $idx_file].enc
-        }
-        catch {::Crypto::prefetch_enc_files $enc_paths}
-    }
     set loaded 0
     foreach idx_file $idx_files {
         if {[::Utils::_load_single_audio_idx $idx_file]} {

@@ -35,7 +35,6 @@ namespace eval ::Config {
         crypto_dll_expected_hash "" \
         v2_salt "" \
         salt_scope "" \
-        tclsh_path "" \
     ]
 }
 
@@ -130,9 +129,6 @@ proc ::Config::load {} {
     if {[llength [info procs ::Salt::resolve]]} {
         set ::Config::v2_salt [::Salt::resolve [dict get $merged crypto_dll_expected_hash] $legacy]
     }
-
-    # Optional explicit tclsh location for subprocess decrypt (empty = auto-detect)
-    set ::Config::tclsh_path [dict get $merged tclsh_path]
 }
 
 # --- Validate game directory and required files ---
